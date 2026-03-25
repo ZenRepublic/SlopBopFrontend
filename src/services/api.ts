@@ -1,9 +1,10 @@
 const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/+$/, '');
 
-export async function apiFetch<T>(endpoint: string): Promise<T> {
+export async function apiFetch<T>(endpoint: string, options?: RequestInit): Promise<T> {
   const response = await fetch(`${API_URL}${endpoint}`, {
     method: 'GET',
     headers: { 'Content-Type': 'application/json' },
+    ...options,
   });
 
   if (!response.ok) {
@@ -34,6 +35,12 @@ export interface Collection {
   createdAt?: string;
 }
 
+export interface SongStats {
+  bops: number;
+  slops: number;
+  totalVotes: number;
+}
+
 export interface Song {
   _id: string;
   artistId: string;
@@ -45,6 +52,7 @@ export interface Song {
   animationUrl?: string;
   lyrics?: string;
   createdAt?: string;
+  stats?: SongStats;
 }
 
 // ── Response wrappers (match backend) ──────────────────
@@ -86,3 +94,18 @@ export const fetchCollection = (id: string) =>
 
 export const fetchSongs = (artistId: string) =>
   apiFetch<SongsResponse>(`/msi/songs?artist_id=${artistId}`).then(r => r.songs);
+
+// ── Voting ───────────────────────────────────────────────
+
+export type VoteType = 'bop' | 'slop';
+
+interface VoteResponse {
+  success: boolean;
+  stats: SongStats;
+}
+
+export const voteSong = (songId: string, type: VoteType) =>
+  apiFetch<VoteResponse>(`/msi/songs/${songId}/vote`, {
+    method: 'PATCH',
+    body: JSON.stringify({ type }),
+  }).then(r => r.stats);

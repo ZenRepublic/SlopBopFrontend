@@ -81,11 +81,13 @@ export default function Discography({ artistId }: Props) {
                   title={song.title || 'Untitled'}
                   duration={song.duration}
                   onClick={() => play({
+                    id: song._id,
                     title: song.title || 'Untitled',
                     coverUrl: song.coverUrl,
                     audioUrl: song.audioUrl || '',
                     duration: song.duration,
                     lyrics: song.lyrics,
+                    stats: song.stats,
                   })}
                 />
               </div>

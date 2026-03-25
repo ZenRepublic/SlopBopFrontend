@@ -31,6 +31,7 @@ import { SOLANA_CHAIN, HELIUS_RPC_URL } from './config/network';
 import { ToastProvider } from './context/ToastContext';
 import { MusicPlayerProvider } from './context/MusicPlayerContext';
 import MusicPlayer from './features/music_player/MusicPlayer';
+import MiniPlayer from './features/music_player/MiniPlayer';
 
 import './styles/index.css';
 import '@solana/wallet-adapter-react-ui/styles.css';
@@ -105,6 +106,7 @@ createRoot(container).render(
               <Route path="/" element={<App />} />
               <Route path="/artists/:id" element={<ArtistProfile />} />
             </Routes>
+            <MiniPlayer />
             <MusicPlayer />
           </MusicPlayerProvider>
         </ToastProvider>

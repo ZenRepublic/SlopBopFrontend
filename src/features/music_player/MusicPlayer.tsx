@@ -1,5 +1,7 @@
-import { useRef, useState, useEffect, useCallback } from 'react';
+import { useCallback } from 'react';
 import { useMusicPlayer } from '../../context/MusicPlayerContext';
+import BopMeter from './BopMeter';
+import './music-player.css';
 
 function formatTime(seconds: number): string {
   const mins = Math.floor(seconds / 60);
@@ -8,91 +10,35 @@ function formatTime(seconds: number): string {
 }
 
 export default function MusicPlayer() {
-  const { track, close } = useMusicPlayer();
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const {
+    track,
+    playing,
+    currentTime,
+    duration,
+    expanded,
+    togglePlay,
+    seek,
+    skip,
+    collapse,
+  } = useMusicPlayer();
 
-  const [playing, setPlaying] = useState(false);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
+  const handleSeek = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => seek(Number(e.target.value)),
+    [seek],
+  );
 
-  // Reset state when track changes
-  useEffect(() => {
-    if (!track) return;
-    setPlaying(false);
-    setCurrentTime(0);
-    setDuration(track.duration ?? 0);
-  }, [track]);
-
-  // Wire up audio element events
-  useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-
-    const onTimeUpdate = () => setCurrentTime(audio.currentTime);
-    const onLoadedMetadata = () => setDuration(audio.duration);
-    const onEnded = () => setPlaying(false);
-
-    audio.addEventListener('timeupdate', onTimeUpdate);
-    audio.addEventListener('loadedmetadata', onLoadedMetadata);
-    audio.addEventListener('ended', onEnded);
-
-    return () => {
-      audio.removeEventListener('timeupdate', onTimeUpdate);
-      audio.removeEventListener('loadedmetadata', onLoadedMetadata);
-      audio.removeEventListener('ended', onEnded);
-    };
-  }, [track]);
-
-  // Play/pause sync
-  useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio || !track) return;
-    if (playing) {
-      audio.play();
-    } else {
-      audio.pause();
-    }
-  }, [playing, track]);
-
-  const togglePlay = useCallback(() => setPlaying(p => !p), []);
-
-  const skip = useCallback((delta: number) => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    audio.currentTime = Math.max(0, Math.min(audio.currentTime + delta, audio.duration || 0));
-  }, []);
-
-  const handleSeek = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    const time = Number(e.target.value);
-    audio.currentTime = time;
-    setCurrentTime(time);
-  }, []);
-
-  const handleClose = useCallback(() => {
-    const audio = audioRef.current;
-    if (audio) {
-      audio.pause();
-      audio.currentTime = 0;
-    }
-    setPlaying(false);
-    close();
-  }, [close]);
-
-  if (!track) return null;
+  if (!track || !expanded) return null;
 
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   return (
     <div className="fixed inset-0 z-[var(--z-modal)] bg-[var(--bg-primary)] overflow-y-auto">
-      {/* Hidden audio element */}
-      <audio ref={audioRef} src={track.audioUrl} preload="metadata" />
-
-      {/* Close button */}
+      {/* Header */}
       <div className="flex justify-end p-lg">
-        <button type="button" onClick={handleClose} className="cursor-pointer">
-          <img src="/Icons/CloseIcon.PNG" alt="Close" className="w-6 h-6" />
+        <button type="button" onClick={collapse} className="cursor-pointer">
+          <svg viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8">
+            <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6z" />
+          </svg>
         </button>
       </div>
 
@@ -110,7 +56,6 @@ export default function MusicPlayer() {
 
       {/* Controls + slider */}
       <div className="flex flex-col gap-md p-xl">
-        {/* Playback controls */}
         <div className="flex items-center justify-center gap-3xl">
           <button
             type="button"
@@ -127,13 +72,11 @@ export default function MusicPlayer() {
                        active:scale-90 transition-base"
           >
             {playing ? (
-              /* Pause icon */
               <svg viewBox="0 0 24 24" fill="var(--black)" className="w-7 h-7">
                 <rect x="6" y="4" width="4" height="16" rx="1" />
                 <rect x="14" y="4" width="4" height="16" rx="1" />
               </svg>
             ) : (
-              /* Play icon */
               <svg viewBox="0 0 24 24" fill="var(--black)" className="w-7 h-7 ml-1">
                 <path d="M8 5v14l11-7z" />
               </svg>
@@ -149,7 +92,6 @@ export default function MusicPlayer() {
           </button>
         </div>
 
-        {/* Progress slider */}
         <div className="flex flex-col gap-xs">
           <input
             type="range"
@@ -167,6 +109,8 @@ export default function MusicPlayer() {
           </div>
         </div>
       </div>
+
+      <BopMeter />
 
       {/* Lyrics */}
       {track.lyrics && (
