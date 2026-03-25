@@ -1,0 +1,220 @@
+/* ============================================================
+   Form Styles — Inputs, Textareas, Labels, Fields
+   ============================================================ */
+
+/* Form Container */
+.form,
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  width: 100%;
+}
+
+/* Label */
+label {
+  display: block;
+  font-family: var(--font-body);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  margin-bottom: var(--space-md);
+  color: var(--text-primary);
+  transition: color var(--transition-base);
+}
+
+label.required::after {
+  content: ' *';
+  color: var(--color-error);
+}
+
+/* Input Base */
+input,
+textarea,
+select {
+  font-family: var(--font-body);
+  font-size: 16px;
+  padding: var(--space-lg);
+  border-radius: var(--radius-md);
+  border: 2px solid var(--border-color);
+  background: var(--bg-input);
+  color: var(--text-primary);
+  width: 100%;
+  transition: border-color var(--transition-base), box-shadow var(--transition-base);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-secondary);
+}
+
+/* Focus */
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: var(--blue-main);
+  box-shadow: 0 0 0 3px rgba(80, 65, 231, 0.1);
+}
+
+/* Disabled */
+input:disabled,
+textarea:disabled,
+select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: var(--bg-tertiary);
+}
+
+/* Error State */
+input.error,
+textarea.error,
+select.error {
+  border-color: var(--color-error);
+  background: rgba(255, 47, 31, 0.05);
+}
+
+input.error:focus,
+textarea.error:focus,
+select.error:focus {
+  border-color: var(--color-error);
+  box-shadow: 0 0 0 3px rgba(255, 47, 31, 0.1);
+}
+
+/* Success State */
+input.success,
+textarea.success {
+  border-color: var(--blue-main);
+  background: rgba(80, 65, 231, 0.05);
+}
+
+/* Textarea */
+textarea {
+  resize: vertical;
+  min-height: 100px;
+  font-family: var(--font-body);
+}
+
+/* Field Wrapper */
+.field-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  width: 100%;
+}
+
+.field-wrapper--inline {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--space-lg);
+}
+
+.field-wrapper--inline input {
+  flex: 1;
+}
+
+/* Field Group (Multiple Inputs) */
+.field-group {
+  display: grid;
+  gap: var(--space-lg);
+  width: 100%;
+}
+
+.field-group--cols-2 { grid-template-columns: 1fr 1fr; }
+.field-group--cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+
+/* Field Error Message */
+.field-error {
+  font-size: var(--font-size-xs);
+  color: var(--color-error);
+  margin-top: var(--space-sm);
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+/* Field Success Message */
+.field-success {
+  font-size: var(--font-size-xs);
+  color: var(--blue-main);
+  margin-top: var(--space-sm);
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+/* Field Help Text */
+.field-help {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  margin-top: var(--space-sm);
+}
+
+/* Checkbox & Radio */
+input[type="checkbox"],
+input[type="radio"] {
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  accent-color: var(--blue-main);
+  cursor: pointer;
+}
+
+input[type="checkbox"]:disabled,
+input[type="radio"]:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.checkbox-wrapper,
+.radio-wrapper {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  cursor: pointer;
+}
+
+.checkbox-wrapper label,
+.radio-wrapper label {
+  margin: 0;
+  cursor: pointer;
+  user-select: none;
+}
+
+.checkbox-wrapper input,
+.radio-wrapper input {
+  width: auto;
+  margin: 0;
+}
+
+/* Select (Dropdown) */
+select {
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right var(--space-md) center;
+  background-size: 20px;
+  padding-right: var(--space-3xl);
+  color: var(--text-primary);
+}
+
+select:hover:not(:disabled) {
+  border-color: var(--blue-secondary);
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .field-group--cols-2,
+  .field-group--cols-3 {
+    grid-template-columns: 1fr;
+  }
+
+  .field-wrapper--inline {
+    flex-direction: column;
+  }
+
+  input,
+  textarea,
+  select {
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+}

@@ -1,0 +1,127 @@
+/* ============================================================
+   Font Faces & Typography
+   ============================================================ */
+
+@font-face {
+  font-family: 'Masicu';
+  src: url('/Fonts/Masicu-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Xirod';
+  src: url('/Fonts/Xirod - new rubian font.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+/* Base heading & text styles in Tailwind base layer */
+@layer base {
+  h1 {
+    font-size: var(--heading-h1-size);
+    font-weight: var(--heading-h1-weight);
+    color: var(--text-primary);
+    text-shadow:
+      -1px -1px 0 var(--black),
+       1px -1px 0 var(--black),
+      -1px  1px 0 var(--black),
+       1px  1px 0 var(--black),
+       0 0 10px rgba(0, 0, 0, 0.8);
+  }
+
+  h2 {
+    font-size: var(--heading-h2-size);
+    font-weight: var(--heading-h2-weight);
+    color: var(--text-primary);
+    text-shadow:
+      -1px -1px 0 var(--black),
+       1px -1px 0 var(--black),
+      -1px  1px 0 var(--black),
+       1px  1px 0 var(--black),
+       0 0 8px rgba(0, 0, 0, 0.8);
+  }
+
+  h3 {
+    font-size: var(--heading-h3-size);
+    font-weight: var(--heading-h3-weight);
+    color: var(--text-primary);
+  }
+
+  p {
+    font-size: var(--font-size-sm);
+    color: var(--text-primary);
+    text-shadow:
+      -1px -1px 0 var(--black),
+       1px -1px 0 var(--black),
+      -1px  1px 0 var(--black),
+       1px  1px 0 var(--black),
+       0 0 8px rgba(0, 0, 0, 0.8);
+  }
+
+  label {
+    font-size: var(--font-size-xs);
+    color: var(--gray);
+    text-shadow:
+      -1px -1px 0 var(--black),
+       1px -1px 0 var(--black),
+      -1px  1px 0 var(--black),
+       1px  1px 0 var(--black);
+  }
+
+  .highlight {
+    color: var(--yellow);
+  }
+
+  .number {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--yellow);
+    text-shadow:
+      -1px -1px 0 var(--black),
+       1px -1px 0 var(--black),
+      -1px  1px 0 var(--black),
+       1px  1px 0 var(--black);
+  }
+
+  @media (min-width: 768px) {
+    h1 { font-size: var(--heading-h1-size); }
+    h2 { font-size: var(--heading-h2-size); }
+    p  { font-size: var(--font-size-base); }
+  }
+}
+
+/* Utility text classes */
+.inverted {
+  color: var(--black);
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.5;
+  margin-bottom: 20px;
+  text-align: center;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.title {
+  font-family: 'Xirod', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--white);
+}
+
+.copyable-text {
+  font-size: 0.75rem;
+  color: var(--gray);
+  font-family: monospace;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.copyable-text:hover {
+  color: var(--yellow);
+}
+
+.copyable-text[role="button"]:focus-visible {
+  outline: 2px solid var(--yellow);
+  outline-offset: 2px;
+}

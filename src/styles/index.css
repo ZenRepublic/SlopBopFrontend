@@ -1,0 +1,66 @@
+/* ============================================================
+   Main Stylesheet — imports design system then Tailwind
+   ============================================================ */
+
+/* Design System */
+@import './theme.css';
+@import './components/text.css';
+@import './components/buttons.css';
+@import './components/cards.css';
+@import './components/forms.css';
+@import './components/modals.css';
+@import './components/music-player.css';
+@import './components/slider.css';
+@import './components/spinners.css';
+@import './components/toast.css';
+
+/* Tailwind CSS */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================
+   Global Reset
+   ============================================================ */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Body & Root */
+body {
+  color: var(--white);
+  padding: 0 var(--space-lg);
+}
+
+/* Animated diagonal stripes background */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 200%;
+  height: 200%;
+  z-index: -1;
+  background: repeating-linear-gradient(
+    45deg,
+    var(--blue-main) 0px,
+    var(--blue-main) 50px,
+    var(--blue-secondary) 50px,
+    var(--blue-secondary) 100px
+  );
+  animation: diagonalScroll 50s linear infinite;
+}
+
+/* Mobile-first: force vertical mobile layout even on desktop */
+#root {
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  max-width: 430px;
+  margin: 0 auto;
+  width: 100%;
+  position: relative;
+  z-index: 1;
+}

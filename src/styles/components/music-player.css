@@ -1,0 +1,37 @@
+/* ============================================================
+   Music Player Slider
+   ============================================================ */
+
+.music-player-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(
+    to right,
+    var(--white) 0%,
+    var(--white) var(--progress, 0%),
+    var(--bg-surface) var(--progress, 0%),
+    var(--bg-surface) 100%
+  );
+  outline: none;
+  cursor: pointer;
+}
+
+.music-player-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--white);
+  cursor: pointer;
+}
+
+.music-player-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--white);
+  border: none;
+  cursor: pointer;
+}
