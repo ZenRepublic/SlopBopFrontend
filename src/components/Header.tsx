@@ -2,17 +2,31 @@ import { useState, useEffect, useRef } from 'react';
 import { ConnectWalletButton } from '../primitives/buttons/ConnectWalletButton';
 import { ImageButton } from '../primitives/buttons/ImageButton';
 
+const SCROLL_UP_THRESHOLD = 30;
+
 export function Header() {
   const [visible, setVisible] = useState(true);
   const lastScrollY = useRef(0);
+  const scrollUpAccumulator = useRef(0);
 
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
+      const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+      const delta = lastScrollY.current - currentScrollY;
 
-      if (currentScrollY < lastScrollY.current || currentScrollY < 50) {
+      if (currentScrollY < 50) {
         setVisible(true);
+        scrollUpAccumulator.current = 0;
+      } else if (currentScrollY >= maxScroll - 5) {
+        scrollUpAccumulator.current = 0;
+      } else if (delta > 0) {
+        scrollUpAccumulator.current += delta;
+        if (scrollUpAccumulator.current >= SCROLL_UP_THRESHOLD) {
+          setVisible(true);
+        }
       } else {
+        scrollUpAccumulator.current = 0;
         setVisible(false);
       }
 
