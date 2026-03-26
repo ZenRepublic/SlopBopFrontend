@@ -94,6 +94,20 @@ textarea {
   font-family: var(--font-body);
 }
 
+/* Light variant — white panel, dark text */
+input.light,
+textarea.light,
+select.light {
+  background: var(--white);
+  color: var(--text-dark);
+  border-color: var(--border-color);
+}
+
+input.light::placeholder,
+textarea.light::placeholder {
+  color: var(--gray);
+}
+
 /* Field Wrapper */
 .field-wrapper {
   display: flex;

@@ -111,6 +111,29 @@ export const voteSong = (songId: string, type: VoteType) =>
     body: JSON.stringify({ type }),
   }).then(r => r.stats);
 
+// ── Song Generation ─────────────────────────────────────
+
+interface GenerateSongPayload {
+  artistId: string;
+  theme: string;
+  collectionId?: string;
+  walletAddress: string;
+  challengeId: string;
+  message: string;
+  signature: string;
+}
+
+interface GenerateSongResponse {
+  success: boolean;
+  message: string;
+}
+
+export const generateSong = (payload: GenerateSongPayload) =>
+  apiFetch<GenerateSongResponse>('/msi/song/generate', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+
 // ── Recording Mode ──────────────────────────────────────
 
 interface RecordingModePayload {

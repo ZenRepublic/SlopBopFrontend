@@ -1,9 +1,13 @@
+import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { useWallet } from '@solana/wallet-adapter-react';
 import { useCollection } from '../../hooks/useCollection';
 import { useArtist } from '../../hooks/useArtist';
 import { useAdmin } from '../../hooks/useAdmin';
 import { useRecordingMode } from '../../hooks/useRecordingMode';
+import { useGenerateSong } from '../../hooks/useGenerateSong';
 import { useMusicPlayer } from '../../context/MusicPlayerContext';
+import { useToast } from '../../context/ToastContext';
 
 const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -26,8 +30,12 @@ export default function CollectionPage() {
   const { collection, songs, loading: collectionLoading, refetch } = useCollection(id ?? '');
   const { artist, loading: artistLoading } = useArtist(collection?.artistId ?? '');
   const { play } = useMusicPlayer();
+  const { connected } = useWallet();
   const { isAdmin } = useAdmin();
   const { toggleRecording, loading: recordingLoading } = useRecordingMode();
+  const { generate, loading: generating } = useGenerateSong();
+  const { showToast } = useToast();
+  const [theme, setTheme] = useState('');
 
   const loading = collectionLoading || artistLoading;
 
@@ -113,6 +121,33 @@ export default function CollectionPage() {
           ))}
         </div>
       </div>
+
+      {collection.isRecording && (
+        <div className="flex flex-col gap-sm px-lg pb-lg">
+          <textarea
+            maxLength={50}
+            rows={2}
+            value={theme}
+            onChange={e => setTheme(e.target.value)}
+            placeholder="What should I sing about?"
+            disabled={generating || !connected}
+            className="w-full resize-none light"
+          />
+          <div className="flex justify-end">
+            <button
+              className="special"
+              disabled={generating || !theme.trim() || !connected}
+              onClick={() =>
+                generate(collection.artistId, theme.trim(), collection._id)
+                  .then(() => { setTheme(''); showToast('Song creation started successfully', 'success'); })
+                  .catch(() => showToast('Failed to generate song'))
+              }
+            >
+              {generating ? 'CREATING...' : 'CREATE'}
+            </button>
+          </div>
+        </div>
+      )}
 
       {isAdmin && (
         <div className="px-lg">
