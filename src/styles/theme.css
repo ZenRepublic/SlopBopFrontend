@@ -138,6 +138,19 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes recordingBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.recording-dot {
+  animation: recordingBlink 1.2s ease-in-out infinite;
+}
+
+.live-recording-banner {
+  animation: pulse 2s ease-in-out infinite;
+}
+
 /* Responsive Typography */
 @media (min-width: 768px) {
   :root {

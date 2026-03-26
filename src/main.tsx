@@ -27,6 +27,7 @@ import {
 
 import App from './App';
 import ArtistProfile from './features/artist_profile/ArtistProfile';
+import CollectionPage from './features/collection/CollectionPage';
 import { SOLANA_CHAIN, HELIUS_RPC_URL } from './config/network';
 import { ToastProvider } from './context/ToastContext';
 import { MusicPlayerProvider } from './context/MusicPlayerContext';
@@ -105,6 +106,7 @@ createRoot(container).render(
             <Routes>
               <Route path="/" element={<App />} />
               <Route path="/artists/:id" element={<ArtistProfile />} />
+              <Route path="/collections/:id" element={<CollectionPage />} />
             </Routes>
             <MiniPlayer />
             <MusicPlayer />

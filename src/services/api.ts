@@ -24,7 +24,7 @@ export interface Artist {
   socials?: Record<string, string>;
 }
 
-export type CollectionType = 'album' | 'EP';
+export type CollectionType = 'Album' | 'EP';
 
 export interface Collection {
   _id: string;
@@ -32,6 +32,7 @@ export interface Collection {
   collectionType: CollectionType;
   title?: string;
   coverUrl?: string;
+  isRecording?: boolean;
   createdAt?: string;
 }
 

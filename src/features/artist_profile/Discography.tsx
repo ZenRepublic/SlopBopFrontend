@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useCollections } from '../../hooks/useCollections';
 import { useSongs } from '../../hooks/useSongs';
 import type { Collection, Song } from '../../services/api';
@@ -47,6 +48,7 @@ function useDiscography(artistId: string): { discography: GroupedDiscography; lo
 export default function Discography({ artistId }: Props) {
   const { discography, loading } = useDiscography(artistId);
   const { play } = useMusicPlayer();
+  const navigate = useNavigate();
 
   if (loading) return null;
   if (!discography.collections.length && !discography.singles.length) return null;
@@ -62,7 +64,7 @@ export default function Discography({ artistId }: Props) {
                 key={collection._id}
                 coverUrl={collection.coverUrl}
                 title={collection.title || 'Untitled'}
-                onClick={() => console.log('navigate to collection', collection._id)}
+                onClick={() => navigate(`/collections/${collection._id}`)}
               />
             ))}
           </div>
