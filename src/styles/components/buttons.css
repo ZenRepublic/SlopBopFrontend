@@ -120,7 +120,7 @@ button.back:active:not(:disabled) {
   transform: scale(0.97);
 }
 
-button.back.full-width {
+button.full-width {
   width: 100%;
 }
 

@@ -110,3 +110,36 @@ export const voteSong = (songId: string, type: VoteType) =>
     method: 'PATCH',
     body: JSON.stringify({ type }),
   }).then(r => r.stats);
+
+// ── Recording Mode ──────────────────────────────────────
+
+interface RecordingModePayload {
+  collectionId: string;
+  isRecording: boolean;
+  walletAddress: string;
+  challengeId: string;
+  message: string;
+  signature: string;
+}
+
+interface RecordingModeResponse {
+  success: boolean;
+}
+
+export const setRecordingMode = (payload: RecordingModePayload) =>
+  apiFetch<RecordingModeResponse>('/msi/collections/recording-mode', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+
+// ── Admin ───────────────────────────────────────────────
+
+interface AdminCheckResponse {
+  isAdmin: boolean;
+}
+
+export const checkAdmin = (walletAddress: string) =>
+  apiFetch<AdminCheckResponse>(`/msi/admin/check`, {
+    method: 'POST',
+    body: JSON.stringify({ walletAddress }),
+  }).then(r => r.isAdmin);

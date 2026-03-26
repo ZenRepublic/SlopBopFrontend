@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { fetchCollection, Collection, Song } from '../services/api';
 import { useToast } from '../context/ToastContext';
 
@@ -28,5 +28,24 @@ export function useCollection(id: string) {
       });
   }, [id]);
 
-  return { collection, songs, loading };
+  const refetch = useCallback(() => {
+    if (!id) return;
+
+    const key = `collection-${id}`;
+    fetchKeyRef.current = key;
+    setLoading(true);
+
+    fetchCollection(id)
+      .then(data => {
+        if (fetchKeyRef.current !== key) return;
+        setCollection(data.collection);
+        setSongs(data.songs);
+      })
+      .catch(() => showToast('Failed to load collection'))
+      .finally(() => {
+        if (fetchKeyRef.current === key) setLoading(false);
+      });
+  }, [id]);
+
+  return { collection, songs, loading, refetch };
 }

@@ -1,6 +1,8 @@
 import { useParams, Link } from 'react-router-dom';
 import { useCollection } from '../../hooks/useCollection';
 import { useArtist } from '../../hooks/useArtist';
+import { useAdmin } from '../../hooks/useAdmin';
+import { useRecordingMode } from '../../hooks/useRecordingMode';
 import { useMusicPlayer } from '../../context/MusicPlayerContext';
 
 const MONTH_NAMES = [
@@ -21,9 +23,11 @@ function formatDuration(seconds: number): string {
 
 export default function CollectionPage() {
   const { id } = useParams<{ id: string }>();
-  const { collection, songs, loading: collectionLoading } = useCollection(id ?? '');
+  const { collection, songs, loading: collectionLoading, refetch } = useCollection(id ?? '');
   const { artist, loading: artistLoading } = useArtist(collection?.artistId ?? '');
   const { play } = useMusicPlayer();
+  const { isAdmin } = useAdmin();
+  const { toggleRecording, loading: recordingLoading } = useRecordingMode();
 
   const loading = collectionLoading || artistLoading;
 
@@ -109,6 +113,19 @@ export default function CollectionPage() {
           ))}
         </div>
       </div>
+
+      {isAdmin && (
+        <div className="px-lg">
+          <button
+            className={collection.isRecording ? 'back full-width' : 'special full-width'}
+            disabled={recordingLoading}
+            onClick={() => toggleRecording(collection._id, !collection.isRecording).then(refetch)}
+          >
+            {recordingLoading ? 'UPDATING...' : collection.isRecording ? 'STOP RECORDING' : 'START RECORDING'}
+          </button>
+        </div>
+      )}
+
     </div>
   );
 }

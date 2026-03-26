@@ -54,6 +54,7 @@ body::before {
 
 /* Mobile-first: force vertical mobile layout even on desktop */
 #root {
+  padding-top: 100px;
   font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
