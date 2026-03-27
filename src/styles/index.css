@@ -30,7 +30,7 @@
 /* Body & Root */
 body {
   color: var(--white);
-  padding: 0 var(--space-lg);
+  padding: 0 var(--space-lg) 70px;
 }
 
 /* Animated diagonal stripes background */
