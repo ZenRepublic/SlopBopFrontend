@@ -84,6 +84,16 @@ interface SongsResponse {
 export const fetchArtist = (id: string) =>
   apiFetch<ArtistResponse>(`/msi/artist/${id}`).then(r => r.artist);
 
+interface ArtistsResponse {
+  success: boolean;
+  artists: Record<string, Artist>;
+}
+
+export const fetchArtists = (limit?: number) => {
+  const params = limit ? `?limit=${limit}` : '';
+  return apiFetch<ArtistsResponse>(`/msi/artists${params}`).then(r => r.artists);
+};
+
 export const fetchCollections = (artistId: string, type?: CollectionType) => {
   const params = new URLSearchParams({ artist_id: artistId });
   if (type) params.set('type', type);

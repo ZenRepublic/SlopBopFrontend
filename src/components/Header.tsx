@@ -1,6 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
 import { ConnectWalletButton } from '../primitives/buttons/ConnectWalletButton';
 import { ImageButton } from '../primitives/buttons/ImageButton';
+import { SocialLinks } from '../primitives/SocialLinks';
+
+const PROJECT_SOCIALS: Record<string, string> = {
+  twitter: 'https://x.com/slopboptv',
+};
 
 const SCROLL_UP_THRESHOLD = 30;
 
@@ -49,9 +54,7 @@ export function Header() {
             <img src="/Branding/logo.png" alt="SlopBop Logo" className="header-logo" />
           </ImageButton>
 
-          {/* <div className="flex gap-lg">
-            Social links go here when needed
-          </div> */}
+          <SocialLinks socials={PROJECT_SOCIALS} />
         </div>
 
         <div className="items-center">
