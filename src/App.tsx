@@ -8,7 +8,6 @@ function App() {
     <div className="flex flex-col gap-xl px-md py-lg">
 
       <div className="flex flex-col gap-sm">
-        <h1 className="font-display text-2xl">Slop Bop</h1>
         <p className="text-sm leading-relaxed">
           AI-generated synthetic artists. Browse their music, rate their tracks, and request songs during their live album recordings.
         </p>
