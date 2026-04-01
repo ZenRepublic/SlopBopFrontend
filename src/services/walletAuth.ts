@@ -8,7 +8,7 @@ export interface VerificationData {
 }
 
 export const getVerificationChallenge = (walletAddress: string) =>
-  apiFetch<{ challengeId: string; message: string }>('/msi/verification/challenge', {
+  apiFetch<{ challengeId: string; message: string }>('/slopbop/verification/challenge', {
     method: 'POST',
     body: JSON.stringify({ walletAddress }),
   });
