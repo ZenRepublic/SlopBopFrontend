@@ -82,7 +82,7 @@ interface SongsResponse {
 // ── Endpoint functions ─────────────────────────────────
 
 export const fetchArtist = (id: string) =>
-  apiFetch<ArtistResponse>(`/msi/artist/${id}`).then(r => r.artist);
+  apiFetch<ArtistResponse>(`/slopbop/artist/${id}`).then(r => r.artist);
 
 interface ArtistsResponse {
   success: boolean;
@@ -91,20 +91,20 @@ interface ArtistsResponse {
 
 export const fetchArtists = (limit?: number) => {
   const params = limit ? `?limit=${limit}` : '';
-  return apiFetch<ArtistsResponse>(`/msi/artists${params}`).then(r => r.artists);
+  return apiFetch<ArtistsResponse>(`/slopbop/artists${params}`).then(r => r.artists);
 };
 
 export const fetchCollections = (artistId: string, type?: CollectionType) => {
   const params = new URLSearchParams({ artist_id: artistId });
   if (type) params.set('type', type);
-  return apiFetch<CollectionsResponse>(`/msi/collections?${params}`).then(r => r.collections);
+  return apiFetch<CollectionsResponse>(`/slopbop/collections?${params}`).then(r => r.collections);
 };
 
 export const fetchCollection = (id: string) =>
-  apiFetch<CollectionResponse>(`/msi/collections/${id}`).then(r => ({ collection: r.collection, songs: r.songs }));
+  apiFetch<CollectionResponse>(`/slopbop/collections/${id}`).then(r => ({ collection: r.collection, songs: r.songs }));
 
 export const fetchSongs = (artistId: string) =>
-  apiFetch<SongsResponse>(`/msi/songs?artist_id=${artistId}`).then(r => r.songs);
+  apiFetch<SongsResponse>(`/slopbop/songs?artist_id=${artistId}`).then(r => r.songs);
 
 // ── Voting ───────────────────────────────────────────────
 
@@ -116,7 +116,7 @@ interface VoteResponse {
 }
 
 export const voteSong = (songId: string, type: VoteType) =>
-  apiFetch<VoteResponse>(`/msi/songs/${songId}/vote`, {
+  apiFetch<VoteResponse>(`/slopbop/songs/${songId}/vote`, {
     method: 'PATCH',
     body: JSON.stringify({ type }),
   }).then(r => r.stats);
@@ -139,7 +139,7 @@ interface GenerateSongResponse {
 }
 
 export const generateSong = (payload: GenerateSongPayload) =>
-  apiFetch<GenerateSongResponse>('/msi/song/generate', {
+  apiFetch<GenerateSongResponse>('/slopbop/song/generate', {
     method: 'POST',
     body: JSON.stringify(payload),
   });
@@ -160,7 +160,7 @@ interface RecordingModeResponse {
 }
 
 export const setRecordingMode = (payload: RecordingModePayload) =>
-  apiFetch<RecordingModeResponse>('/msi/collections/recording-mode', {
+  apiFetch<RecordingModeResponse>('/slopbop/collections/recording-mode', {
     method: 'POST',
     body: JSON.stringify(payload),
   });
@@ -172,7 +172,7 @@ interface AdminCheckResponse {
 }
 
 export const checkAdmin = (walletAddress: string) =>
-  apiFetch<AdminCheckResponse>(`/msi/admin/check`, {
+  apiFetch<AdminCheckResponse>(`/slopbop/admin/check`, {
     method: 'POST',
     body: JSON.stringify({ walletAddress }),
   }).then(r => r.isAdmin);
