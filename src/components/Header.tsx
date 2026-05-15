@@ -5,10 +5,34 @@ import { useTimeline } from '../context/TimelineContext';
 
 const SCROLL_UP_THRESHOLD = 30;
 
+// Live wall clock for `timezone`, re-derived every second. Empty until the
+// timezone has been captured from the first sim load.
+function useTickingClock(timezone: string | null): string {
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  if (!timezone) return '';
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: timezone,
+    hourCycle: 'h23',
+    year: '2-digit',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  }).formatToParts(now);
+  const p = (t: string) => parts.find(x => x.type === t)!.value;
+  return `${p('year')}/${p('month')}/${p('day')} ${p('hour')}:${p('minute')}:${p('second')}`;
+}
+
 // `at` is a naive sim-local string "YYYY-MM-DDTHH:MM" — display its parts
 // directly; never run it through new Date() (that would re-apply the browser's
-// local zone and double-shift it).
-function formatSimClock(at: string) {
+// local zone and double-shift it). Used in scrubbed mode, where `at` is a
+// fixed minute-resolution position.
+function formatScrubbed(at: string) {
   if (!at) return '—';
   const [date, time] = at.split('T');
   const [y, mo, d] = date.split('-');
@@ -16,13 +40,16 @@ function formatSimClock(at: string) {
 }
 
 function LocalTime() {
-  const { at, city } = useTimeline();
+  const { mode, timezone, at, city } = useTimeline();
+  const live = useTickingClock(timezone);
+  const display = mode === 'live' ? live || '—' : formatScrubbed(at);
   return (
     <div className="flex flex-col leading-tight">
       <span className="text-gray text-xs uppercase tracking-wide">
-        {city ? `Local Time in ${city}` : 'Local Time'}
+        {/* {city ? `Local Time in ${city}` : 'Local Time'} */}
+        {'Local Time'}
       </span>
-      <span className="font-display text-sm tabular-nums">{formatSimClock(at)}</span>
+      <span className="font-display text-sm tabular-nums">{display}</span>
     </div>
   );
 }
