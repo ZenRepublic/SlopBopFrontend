@@ -115,7 +115,7 @@ export default function MapPage() {
 
       {/* Weather chip, centred just below the overlaid header. */}
       {sim?.weather && (
-        <div className="absolute top-[100px] left-1/2 -translate-x-1/2 rounded-xl border border-white/15 bg-white/10 px-sm py-1.5 text-sm shadow-md backdrop-blur-sm">
+        <div className="absolute top-[100px] left-1/2 -translate-x-1/2 whitespace-nowrap rounded-xl border border-white/15 bg-white/10 px-sm py-1.5 text-sm shadow-md backdrop-blur-sm">
           {sim.weather}
         </div>
       )}
