@@ -6,7 +6,7 @@ SlopBop is a platform for AI-generated synthetic artists. The frontend is a mobi
 
 The experience is closest to AI Spotify: browse artists, listen to their collections, vote on songs, and during live events, request AI-generated songs in real time.
 
-The app is currently being expanded into a **simulation-first** view: a separate `SlopBopSimulator` (Python) produces a presimulated day per artist, and the frontend will drip-feed that day to viewers. Plumbing (types, fetchers, hooks) is in place; UI is not yet built. See "Simulation Plumbing" below.
+The app has been reframed into a **simulation-first** view: a separate `SlopBopSimulator` (Python) produces a presimulated day per artist, and the frontend drip-feeds that day to viewers. The home page is now a full-screen **world map** that places artists and locations on a tile grid, so opening the site immediately reads as "a simulation you're watching a snapshot of." See "World Map" below.
 
 ---
 
@@ -14,7 +14,8 @@ The app is currently being expanded into a **simulation-first** view: a separate
 
 | Route | Component | Description |
 |---|---|---|
-| `/` | `App` | Placeholder ("My Super Idol", coming soon) |
+| `/` | `MapPage` | Full-screen world map — the simulation view (home) |
+| `/about` | `AboutPage` | Project blurb + footer |
 | `/artists/:id` | `ArtistProfile` | Artist profile + discography |
 | `/collections/:id` | `CollectionPage` | Album/EP view + live recording mode |
 
@@ -54,6 +55,20 @@ SongStats  { bops, slops, totalVotes }
 ---
 
 ## Feature Breakdown
+
+### World Map (`/`)
+
+The home page — a full-screen, top-down map that makes the simulation tangible: you see *where* each artist is in the world right now.
+
+The backend gives every location and agent an integer tile coordinate (used server-side for distance / travel-turn maths). The frontend treats that grid as the layout. `src/features/map/grid.ts` is the **single source** of the grid↔pixel mapping: the board is *derived* from the locations (`computeBounds` — min/max tile + a `MARGIN_TILES` border, so there's never dead grid), then scaled with a CSS transform so the whole world is always visible at once, filling the viewport on any screen. Unlike the rest of the app, the map page is **not** clamped to the 430px column.
+
+- **`MapPage`** — owns the fit-scale, splits agents into location occupants vs. loose markers, renders the weather chip.
+- **`LocationIcon`** — emoji + name at its tile; shows a `👤 N` overlay when artists stand on it; tapping opens the panel.
+- **`AgentMarker`** — an artist's avatar at their tile, linking to the profile. Rendered only for artists on a *vacant* tile — artists on a location's tile are folded into that location's occupant count instead.
+- **`LocationPanel`** — a `BottomSheet` (its `fitContent` variant) with the location name, description, and clickable artist strips.
+- **`GridLines`** — dev overlay (grid + margin shading), gated by `GRIDLINE_OPACITY` in `grid.ts`; set to 0 to hide.
+
+Pan/zoom is intentionally deferred: the fit-scale *is* the default zoom level a future pan/zoom layer would start from.
 
 ### Artist Profile (`/artists/:id`)
 
@@ -136,11 +151,12 @@ Wrapping order in `main.tsx`:
 BrowserRouter
   WalletContextProvider    ← Solana wallet (Phantom, Solflare, MWA)
     ToastProvider          ← global toast notifications
-      MusicPlayerProvider  ← global audio playback state
-        Header
-        Routes
-        MiniPlayer
-        MusicPlayer
+      SimProvider          ← shared sim snapshot (polled); read via useSim()
+        MusicPlayerProvider  ← global audio playback state
+          Header
+          Routes
+          MiniPlayer
+          MusicPlayer
 ```
 
 ---
@@ -155,12 +171,12 @@ Wallet-gated mutation hooks (`useGenerateSong`, `useRecordingMode`, `useAdmin`, 
 
 Types and fetchers in `src/services/slopbop/sim.ts`:
 
-- `SimCurrent` — `{ simulation_id, date, weather, sim_time, status, artists }`. Per-artist value is a `SnapshotState | null` (null = intro hasn't run yet).
-- `SnapshotState` — `{ location, position, current_action, current_target, busy_until, stats }`. `stats` is an array of `{ name, value }` pairs (no hardcoded keys).
-- `JournalEntry` — discriminated union of `intent | resolution | arrival`.
+- `SimCurrent` — `{ simulation_id, date, weather, sim_time, environment, status, artists }`. Per-artist value is a `SnapshotState | null` (null = intro hasn't run yet). `environment` is `{ city, timezone, lat, lon }` (the sim's place, static for its life; null for legacy docs).
+- `SnapshotState` — `{ location, position, current_action, current_target, busy_until, stats }`. `position` is a `[number, number]` tile or null; `stats` is a `Record<string, number>` (no hardcoded keys).
+- `JournalEntry` — discriminated union on `type`: `plan | intent | interaction | arrival`.
 - `Note` — `{ sim_time, note }`.
-- `Location` + `InteractionDef` — world map shapes (location key, emoji, description, interactions map).
-- Helper `isSimLive(sim)` — UTC `sim.date === today`.
+- `Location` — `{ _id, name, position, emoji, description, interactions }`; `interactions` is a map of `InteractionDef`. `WorldMap` is `Location[]`.
+- Helper `isSimLive(sim)` — `sim.date === today` evaluated in the sim's own `environment.timezone` (falls back to UTC for legacy docs).
 
 Hooks in `src/hooks/`:
 
@@ -169,7 +185,7 @@ Hooks in `src/hooks/`:
 - `useSimArtistJournal(simId, artistId, { live? })` — same shape, returns journal entries.
 - `useWorldMap()` — fetched once, cached at module scope with in-flight dedup.
 
-No UI consumes these yet. The redesign (sim-overview home, state strip on artist profile, journal tab) is the next phase.
+`SimContext` wraps `useSimCurrent()` so the snapshot is fetched/polled once and shared via `useSim()`. The **World Map** (`/`) consumes `useWorldMap()` plus that snapshot. The remaining redesign (state strip on artist profile, journal tab) is the next phase.
 
 ## Key Files
 
@@ -183,12 +199,15 @@ No UI consumes these yet. The redesign (sim-overview home, state strip on artist
 | `src/services/slopbop/sim.ts` | Sim types + fetchers + `isSimLive` helper |
 | `src/context/MusicPlayerContext.tsx` | Global audio state |
 | `src/context/ToastContext.tsx` | Global toast state |
+| `src/context/SimContext.tsx` | Shared sim snapshot (polled), exposed via `useSim()` |
 | `src/hooks/useResource.ts` | Generic read-hook (stale-guard + polling) |
 | `src/hooks/useAdmin.ts` | Admin wallet check |
 | `src/hooks/useWalletAuth.ts` | Wallet signature flow |
 | `src/hooks/useRecordingMode.ts` | Toggle recording on a collection |
 | `src/hooks/useGenerateSong.ts` | Submit song generation request |
 | `src/hooks/useSim*.ts`, `useWorldMap.ts` | Simulation read-hooks |
+| `src/features/map/` | World map home page — `MapPage`, `grid.ts`, icons, `LocationPanel` |
+| `src/features/about/` | About page (project blurb + footer) |
 | `src/features/artist_profile/` | Artist profile page + discography |
 | `src/features/collection/` | Collection/album page + live mode |
 | `src/features/music_player/` | MusicPlayer, MiniPlayer, BopMeter |
