@@ -2,10 +2,12 @@ import { useState, useEffect } from 'react';
 import { useWorldMap } from '../../hooks/useWorldMap';
 import { useArtists } from '../../hooks/useArtists';
 import { useSim } from '../../context/SimContext';
+import { Artist, Location } from '../../services/slopbop';
 import { computeBounds } from './grid';
 import { GridLines } from './GridLines';
 import { LocationIcon } from './LocationIcon';
 import { AgentMarker } from './AgentMarker';
+import { LocationPanel } from './LocationPanel';
 
 // Tracks the viewport size so the board can be scaled to fit it.
 function useViewportSize() {
@@ -17,6 +19,8 @@ function useViewportSize() {
   }, []);
   return size;
 }
+
+const tileKey = (t: [number, number]) => `${t[0]},${t[1]}`;
 
 // Full-screen world map (route: /map). Unlike the rest of the app it is NOT
 // clamped to the 430px column — it fills the whole viewport. The board is
@@ -31,6 +35,11 @@ export default function MapPage() {
   const { sim } = useSim();
   const { w: vw, h: vh } = useViewportSize();
 
+  // The tapped location, kept set while its panel animates closed so the
+  // panel content doesn't blank out mid-slide.
+  const [selected, setSelected] = useState<Location | null>(null);
+  const [panelOpen, setPanelOpen] = useState(false);
+
   const loading = mapLoading || artistsLoading;
 
   // The board is sized from the *locations* only, so it stays stable as
@@ -42,15 +51,33 @@ export default function MapPage() {
   // tighter. Allowed to scale above 1 so a small world still fills the view.
   const scale = Math.min(vw / bounds.width, vh / bounds.height);
 
-  // [artist, tile] for every placed agent. Agents always sit on an integer
-  // tile, so each renders directly with no travel interpolation.
+  // Split placed agents into those standing on a location's tile (shown as
+  // that location's occupants) and those on a vacant tile (shown as a free
+  // marker, exactly as before). Agents always sit on an integer tile.
   const artistById = new Map(artists.map(a => [a._id, a]));
-  const agents = sim
-    ? Object.entries(sim.artists).flatMap(([id, snap]) => {
-        const artist = artistById.get(id);
-        if (!artist || !snap?.position) return [];
-        return [{ artist, tile: snap.position }];
-      })
+  const locationByTile = new Map(
+    (locations ?? []).map(l => [tileKey(l.position), l]),
+  );
+  const occupantsByLocation = new Map<string, Artist[]>();
+  const looseAgents: { artist: Artist; tile: [number, number] }[] = [];
+
+  if (sim) {
+    for (const [id, snap] of Object.entries(sim.artists)) {
+      const artist = artistById.get(id);
+      if (!artist || !snap?.position) continue;
+      const loc = locationByTile.get(tileKey(snap.position));
+      if (loc) {
+        const list = occupantsByLocation.get(loc._id) ?? [];
+        list.push(artist);
+        occupantsByLocation.set(loc._id, list);
+      } else {
+        looseAgents.push({ artist, tile: snap.position });
+      }
+    }
+  }
+
+  const selectedOccupants = selected
+    ? occupantsByLocation.get(selected._id) ?? []
     : [];
 
   return (
@@ -69,13 +96,29 @@ export default function MapPage() {
         >
           <GridLines />
           {locations?.map(loc => (
-            <LocationIcon key={loc._id} location={loc} bounds={bounds} />
+            <LocationIcon
+              key={loc._id}
+              location={loc}
+              bounds={bounds}
+              occupantCount={occupantsByLocation.get(loc._id)?.length ?? 0}
+              onClick={() => {
+                setSelected(loc);
+                setPanelOpen(true);
+              }}
+            />
           ))}
-          {agents.map(({ artist, tile }) => (
+          {looseAgents.map(({ artist, tile }) => (
             <AgentMarker key={artist._id} artist={artist} tile={tile} bounds={bounds} />
           ))}
         </div>
       )}
+
+      <LocationPanel
+        open={panelOpen}
+        onClose={() => setPanelOpen(false)}
+        location={selected}
+        occupants={selectedOccupants}
+      />
     </div>
   );
 }

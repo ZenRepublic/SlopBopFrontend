@@ -5,12 +5,15 @@ interface Props {
   open: boolean;
   onClose: () => void;
   title?: string;
+  // When true the sheet is only as tall as its content (still capped at the
+  // CSS max-height) instead of the default fixed 85dvh.
+  fitContent?: boolean;
   children: React.ReactNode;
 }
 
 const SWIPE_CLOSE_THRESHOLD = 100;
 
-export function BottomSheet({ open, onClose, title, children }: Props) {
+export function BottomSheet({ open, onClose, title, fitContent, children }: Props) {
   const [mounted, setMounted] = useState(open);
   const [entered, setEntered] = useState(false);
   const sheetRef = useRef<HTMLDivElement>(null);
@@ -76,6 +79,7 @@ export function BottomSheet({ open, onClose, title, children }: Props) {
       <div
         ref={sheetRef}
         className={`bottom-sheet${entered ? ' open' : ''}`}
+        style={fitContent ? { height: 'auto' } : undefined}
         role="dialog"
         aria-modal="true"
         aria-label={title}

@@ -23,8 +23,8 @@
   transform: translateX(-50%) translateY(100%);
   width: 100%;
   max-width: 430px;
-  height: 85dvh;
-  max-height: 85vh;
+  height: 75dvh;
+  max-height: 75vh;
   background: var(--bg-secondary);
   border-top-left-radius: var(--radius-xl);
   border-top-right-radius: var(--radius-xl);
