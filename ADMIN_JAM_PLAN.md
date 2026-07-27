@@ -1,4 +1,4 @@
-# Plan — Admin login & mixtape creation
+# Plan — Admin login & jam creation
 
 **This is a build plan, not a doc. Delete it when the work ships.** The repo's
 rule is that per-feature markdown rots (see `CLAUDE.md`); this file exists to get
@@ -6,11 +6,11 @@ one feature built and should leave with it.
 
 ## The goal, narrowly
 
-One logged-in action: **create a mixtape on an artist** — title, cover, max
+One logged-in action: **create a jam on an artist** — title, cover, max
 submissions. Nothing else.
 
-Explicitly **not** in scope: resolving a mixtape (picking the winning song,
-deleting the losers), editing or deleting a mixtape after creation, any admin
+Explicitly **not** in scope: resolving a jam (picking the winning song,
+deleting the losers), editing or deleting a jam after creation, any admin
 dashboard, any account system. Resolution stays a manual database operation for
 now, which is fine — it happens once per session and only Thomas does it.
 
@@ -57,13 +57,13 @@ being invented.
 Cross-repo change. Read `../SlopBopSimulator/_DOCS/_INFRA/` first, and note that
 `collections` is a backend-owned collection per `MONGO_SCHEMA.md`.
 
-**`POST /slopbop/collections`** — create a mixtape.
+**`POST /slopbop/collections`** — create a jam.
 
 ```
 body: {
   verification: VerificationData,   // the existing challenge/signature shape
   artist_id: string,
-  type: 'mixtape',
+  type: 'jam',
   title: string,
   cover_url: string,
   max_tracks: number,
@@ -74,8 +74,8 @@ Must, server-side:
 
 1. Verify the signature against the stored challenge, then confirm the wallet is
    an admin. Reject with 401/403 otherwise.
-2. **Reject if the artist already has a mixtape** (409). This is the "one open
-   mixtape at a time" rule, and it belongs on the server — the frontend hides the
+2. **Reject if the artist already has a jam** (409). This is the "one open
+   jam at a time" rule, and it belongs on the server — the frontend hides the
    button, but the rule can't live only there.
 3. Validate `max_tracks` within sane bounds and `title` length, returning
    field-keyed errors on a 400 so the form can map them onto inputs (the pattern
@@ -86,34 +86,34 @@ Must, server-side:
 Follows the conventions in `CLAUDE.md` — service types are the contract, hooks
 are per-resource, mutations are command-shaped.
 
-1. **`services/slopbop/collections.ts`** — add `CreateMixtapePayload` and
-   `createMixtape(payload)`. Types here are the API contract; keep them matching
+1. **`services/slopbop/collections.ts`** — add `CreateJamPayload` and
+   `createJam(payload)`. Types here are the API contract; keep them matching
    the endpoint above.
 
-2. **`hooks/useCreateMixtape.ts`** — command-shaped mutation hook, modelled on
+2. **`hooks/useCreateJam.ts`** — command-shaped mutation hook, modelled on
    `useSubmitSongRequest`: `{ create, submitting, fieldErrors }`. It calls
    `useWalletVerification().verify()` to get the signature, then POSTs. The
    signature prompt is part of submitting, not of opening the form — don't make
    the user sign just to see the fields.
 
-3. **`features/artist_profile/CreateMixtapeForm.tsx`** — title, cover URL, max
+3. **`features/artist_profile/CreateJamForm.tsx`** — title, cover URL, max
    submissions. Use the existing `primitives/form` controls (`TextField`) and put
    it in a `Modal` or `BottomSheet` from `primitives/`, both of which exist.
 
 4. **`features/artist_profile/ArtistProfile.tsx`** — where it hangs. The artist
-   can only have one mixtape, so the create affordance goes in **the same slot
-   `LiveMixtapeCard` occupies**:
+   can only have one jam, so the create affordance goes in **the same slot
+   `LiveJamCard` occupies**:
 
    ```
-   mixtape        → <LiveMixtapeCard />
-   !mixtape && isAdmin → "Start a mixtape" button
-   !mixtape && !isAdmin → nothing
+   jam        → <LiveJamCard />
+   !jam && isAdmin → "Start a jam" button
+   !jam && !isAdmin → nothing
    ```
 
    That gives the whole feature a home without a new route, a dashboard, or a nav
    entry, and it reads correctly: the slot is "what this artist has going on."
 
-5. On success, refetch so `useLiveMixtape` picks up the new mixtape and the card
+5. On success, refetch so `useLiveJam` picks up the new jam and the card
    replaces the button. `useCollections` is built on `useResource` — check its
    cache behaviour here, since a stale list would leave the button showing after
    a successful create.
@@ -131,14 +131,14 @@ and pastes the link. Revisit only if a second operator ever needs it.
 
 ## Open questions
 
-- **Does the backend already have a create-collection endpoint?** Albums exist,
+- **Does the backend already have a create-collection endpoint?** Mixtapes exist,
   so something creates them — if it's the simulator rather than the backend, or
   an unauthenticated internal route, that changes step 1 above. Check before
   building.
 - **Bounds on `max_tracks`?** The UI should offer a sane range rather than a free
   number field. What's the real ceiling for a session?
-- **Does creating a mixtape need to be undoable?** Thomas mentioned deleting a
-  mixtape to start over (losing all songs). If a typo'd title is currently
+- **Does creating a jam need to be undoable?** Thomas mentioned deleting a
+  jam to start over (losing all songs). If a typo'd title is currently
   unfixable without database access, a delete may be worth folding in — it's
   small, and it's the difference between a mistake costing a click and costing a
   Mongo session.

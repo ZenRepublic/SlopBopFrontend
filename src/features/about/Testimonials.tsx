@@ -6,7 +6,7 @@ interface Testimonial {
 }
 
 /**
- * Real quotes from people whose group commissioned an album. Add entries here as
+ * Real quotes from people whose group commissioned a mixtape. Add entries here as
  * they come in; the card hides itself entirely while the list is empty, so
  * there is never any placeholder/fake social proof on the page.
  */

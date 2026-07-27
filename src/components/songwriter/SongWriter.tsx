@@ -45,7 +45,7 @@ function markSubmitted(collectionId: string) {
 }
 
 interface Props {
-  /** The collection (album or mixtape) this submission is written against. */
+  /** The collection (mixtape or jam) this submission is written against. */
   collectionId: string;
   /** Submissions received so far — the numerator of the count header. */
   trackCount: number;
@@ -54,7 +54,7 @@ interface Props {
   /** Cap this device at one submission for this collection: on success the
    * writer gives way to the thank-you notice, and stays that way on return
    * visits. Off by default — it takes as many submissions as the collection has
-   * room for. Albums opt in; mixtapes don't. */
+   * room for. Mixtapes opt in; jams don't. */
   oncePerDevice?: boolean;
   /** Refetch the collection so the count header advances and the window is
    * re-evaluated (capacity hit, or a 409 closes it). */
@@ -63,7 +63,7 @@ interface Props {
 
 /**
  * The SongWriter — where a guest writes the lyrics for their song. Shared
- * verbatim by albums and mixtapes.
+ * verbatim by mixtapes and jams.
  *
  * Deliberately not a form. It's built as one instrument: a bezel carrying the
  * `count / max songs` header, an inset ruled screen the lyrics are written on,
@@ -84,7 +84,7 @@ interface Props {
  *
  * Everything *around* it — the intro copy, any deadline countdown, the lifecycle
  * gating that decides whether the card shows at all — lives in the per-type
- * manager that renders it (album `Submissions`, `MixtapeSubmissions`), so this
+ * manager that renders it (mixtape `Submissions`, `JamSubmissions`), so this
  * stays identical for every collection type.
  */
 export default function SongWriter({

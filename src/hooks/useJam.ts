@@ -2,19 +2,19 @@ import { useResource } from './useResource';
 import { fetchCollection, Song } from '../services/slopbop';
 import { useToast } from '../context/ToastContext';
 
-// Loads a single mixtape — a mixtape-type collection — for the mixtape page.
-// Same generic detail read as an album (`fetchCollection`); a mixtape shares the
+// Loads a single jam — a jam-type collection — for the jam page.
+// Same generic detail read as a mixtape (`fetchCollection`); a jam shares the
 // collection shape and, once the backend enriches it, the same `requestStatus`
 // (open until capacity, no start/deadline window).
-export function useMixtape(id: string) {
+export function useJam(id: string) {
   const { showToast } = useToast();
   const { data, loading, refetch } = useResource(
     () => fetchCollection(id),
     id ? `collection-${id}` : '',
-    { onError: () => showToast('Failed to load mixtape') },
+    { onError: () => showToast('Failed to load jam') },
   );
   return {
-    mixtape: data?.collection ?? null,
+    jam: data?.collection ?? null,
     songs: (data?.songs ?? []) as Song[],
     requestStatus: data?.requestStatus ?? null,
     loading,

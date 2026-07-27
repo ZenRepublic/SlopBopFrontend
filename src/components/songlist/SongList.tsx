@@ -28,7 +28,7 @@ interface Props {
 /**
  * The canonical way to render a list of songs: a release/popular sort toggle and a
  * play-all button over a card per song. Shared by the artist's Singles section
- * and the album tracklist so the two stay identical.
+ * and the mixtape tracklist so the two stay identical.
  *
  * Playback is what-you-see-is-what-plays: hitting play-all, or tapping a song,
  * snapshots the list in its *current* displayed order into the player's queue

@@ -11,10 +11,18 @@ interface Props {
   artistName?: string;
 }
 
-// The artist's permanent catalogue. Mixtapes are deliberately absent: a mixtape
-// is a live session, not a release, so it surfaces as the LIVE card at the top
-// of the profile and is gone once it resolves. Its songs are excluded here for
-// free — they carry a `collection_id`, so they never fall through to singles.
+// The artist's permanent catalogue — authored albums, plus the singles that never
+// landed on one. Only type `album` is read here, which is what keeps the other
+// two kinds out, each for its own reason:
+//
+//   jam      a live session, not a release — it surfaces as the LIVE card at the
+//            top of the profile and is gone once it resolves.
+//   mixtape  a commissioned group's artifact from their own day. Listing it would
+//            file someone's birthday party under the label's discography. It
+//            stays reachable by its own link; it just isn't the artist's work.
+//
+// Songs from either are excluded for free — they carry a `collection_id`, so they
+// never fall through to singles.
 export interface GroupedDiscography {
   albums: { album: Collection; songs: Song[] }[];
   singles: Song[];

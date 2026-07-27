@@ -1,6 +1,6 @@
 # SlopBop Frontend — The Simulation Layer
 
-**Status: deferred.** Everything here is **present in the code, fully routed, and working** — it is simply not linked from the NavBar while the product points at album commissions (see `OVERVIEW.md`). Nothing described here has been removed or stubbed. This document is parked context: read it when the sim comes back, not before.
+**Status: deferred.** Everything here is **present in the code, fully routed, and working** — it is simply not linked from the NavBar while the product points at mixtape commissions (see `OVERVIEW.md`). Nothing described here has been removed or stubbed. This document is parked context: read it when the sim comes back, not before.
 
 Two surfaces are parked here — a show, and the funnel that casts it:
 
@@ -25,7 +25,7 @@ It is **entirely contained within the Map page** — nothing outside `/map` touc
 
 ## Sim Is Scoped to the Map Page
 
-`SimProvider` mounts on `/map` and nowhere else, so the `/sim/current` heartbeat only runs while the map is on screen and stops the moment you leave. The static surfaces (roster, profile, album) never read the sim — their artists come straight from the `artists` collection and their songs are always visible, independent of any sim clock.
+`SimProvider` mounts on `/map` and nowhere else, so the `/sim/current` heartbeat only runs while the map is on screen and stops the moment you leave. The static surfaces (roster, profile, collection pages) never read the sim — their artists come straight from the `artists` collection and their songs are always visible, independent of any sim clock.
 
 The layers meet in exactly one direction: the ArtistSheet on the live map links out to a static profile. **The static side has no knowledge of the sim.** Keep it that way — the reason the rest of the app is cheap to reason about is that the live layer can't leak into it.
 

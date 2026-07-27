@@ -3,18 +3,18 @@ import type { RequestStatus } from '../../services/slopbop';
 import SongWriter from '../../components/songwriter/SongWriter';
 
 interface Props {
-  albumId: string;
+  mixtapeId: string;
   artistName?: string;
   status: RequestStatus;
-  /** Number of songs published on the album (released or upcoming). Once the
+  /** Number of songs published on the mixtape (released or upcoming). Once the
    * first one exists, submissions are done and the whole panel hides. */
   songCount: number;
-  /** Refetch the album so the window is re-evaluated (start/deadline hits, or a
+  /** Refetch the mixtape so the window is re-evaluated (start/deadline hits, or a
    * 409 closes it). */
   refresh: () => void;
 }
 
-// Song submissions for this album, rendered on the album page. Its lifecycle:
+// Song submissions for this mixtape, rendered on the mixtape page. Its lifecycle:
 //
 //   window open        → intro + deadline strip + form card
 //   window not started → countdown to the opening
@@ -22,9 +22,9 @@ interface Props {
 //   first song exists  → nothing at all (its job is done)
 //   never any activity → nothing at all
 //
-// Owns its own top divider so that hiding it also removes the divider — the album
+// Owns its own top divider so that hiding it also removes the divider — the mixtape
 // page just drops <Submissions/> in and lets it decide whether to show.
-export default function Submissions({ albumId, artistName, status, songCount, refresh }: Props) {
+export default function Submissions({ mixtapeId, artistName, status, songCount, refresh }: Props) {
   let body: React.ReactNode = null;
   if (songCount > 0) {
     // First song is published — the submission phase is over. Render nothing.
@@ -32,19 +32,19 @@ export default function Submissions({ albumId, artistName, status, songCount, re
   } else if (status.open) {
     // Intro copy and the deadline strip sit *above* the form card, which is a
     // generic self-contained card (count header + fields). Keeping them out is
-    // what lets the same card serve albums and mixtapes. An album is one song
+    // what lets the same card serve mixtapes and jams. A mixtape is one song
     // per guest, hence oncePerDevice.
     body = (
       <div className="flex flex-col gap-md">
         <p className="text-sm text-secondary leading-relaxed">
-          Help {artistName ?? 'this artist'} produce this album by submitting a
+          Help {artistName ?? 'this artist'} produce this mixtape by submitting a
           song with your own custom lyrics.
         </p>
         {status.submission_deadline && (
           <DeadlineStrip deadline={status.submission_deadline} onExpire={refresh} />
         )}
         <SongWriter
-          collectionId={albumId}
+          collectionId={mixtapeId}
           trackCount={status.track_count}
           maxTracks={status.max_tracks}
           oncePerDevice
@@ -70,9 +70,9 @@ export default function Submissions({ albumId, artistName, status, songCount, re
   );
 }
 
-// The countdown strip pinned above the form while a dated album is taking
+// The countdown strip pinned above the form while a dated mixtape is taking
 // submissions: how long is left to get one in. A pulsing red so the room can't
-// miss it. Albums with a deadline only — mixtapes have no window, so they never
+// miss it. Mixtapes with a deadline only — jams have no window, so they never
 // render this.
 function DeadlineStrip({ deadline, onExpire }: { deadline: string; onExpire: () => void }) {
   return (
@@ -93,7 +93,7 @@ function PendingNotice({ status, onStart }: { status: RequestStatus; onStart: ()
   return (
     <div className="flex flex-col items-center gap-sm text-center">
       <p className="text-sm text-secondary leading-relaxed">
-        The song submissions for this album opens in…
+        The song submissions for this mixtape opens in…
       </p>
       {status.submission_start ? (
         <Countdown
@@ -110,14 +110,14 @@ function PendingNotice({ status, onStart }: { status: RequestStatus; onStart: ()
   );
 }
 
-// Submissions are in and closed, but no song has been generated yet — the album
+// Submissions are in and closed, but no song has been generated yet — the mixtape
 // is being produced. Disappears entirely once the first song publishes.
 function ProducingNotice() {
   return (
     <div className="flex flex-col items-center gap-md text-center py-sm">
       <div className="spinner large processing" />
       <p className="text-sm text-secondary leading-relaxed">
-        The album is being produced — hang tight!
+        The mixtape is being produced — hang tight!
       </p>
     </div>
   );

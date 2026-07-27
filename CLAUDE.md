@@ -4,7 +4,7 @@ Mobile-first React web app (430px design target) — the public window into Slop
 
 ## Current focus
 
-The product has narrowed to its breakout feature: **group album creation**, sold as **Album Commissions**. A host rents one of our synthetic artists for a private activity with a group; everyone writes lyrics for a short song, the artist records them, and the songs release one-by-one on a shared album page for the group to listen, react, and vote on. The top-voted song gets a music video posted to our socials.
+The product has narrowed to its breakout feature: **group mixtape creation**, sold as **Mixtape Commissions**. A host rents one of our synthetic artists for a private activity with a group; everyone writes lyrics for a short song, the artist records them, and the songs release one-by-one on a shared mixtape page for the group to listen, react, and vote on. The top-voted song gets a music video posted to our socials.
 
 The nav is **About · Roster · Commission**. The About page (`/`) states the label's thesis and teases the offer; the **Commission page (`/commission`, `features/commission/`, `CommissionPage`)** carries the pitch and ends with an email inquiry (`ContactForm` → a `mailto:` to `slopboptv@gmail.com`; no payment or ordering flow yet).
 

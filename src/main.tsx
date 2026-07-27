@@ -34,6 +34,7 @@ import ArtistProfile from './features/artist_profile/ArtistProfile';
 import { NavBar } from './components/NavBar';
 import AlbumPage from './features/album/AlbumPage';
 import MixtapePage from './features/mixtape/MixtapePage';
+import JamPage from './features/jam/JamPage';
 import MapPage from './features/map/MapPage';
 import AboutPage from './features/about/AboutPage';
 import RosterPage from './features/roster/RosterPage';
@@ -168,6 +169,7 @@ const router = createBrowserRouter([
       { path: '/artists/:id', element: <ArtistProfile /> },
       { path: '/albums/:id', element: <AlbumPage /> },
       { path: '/mixtapes/:id', element: <MixtapePage /> },
+      { path: '/jams/:id', element: <JamPage /> },
     ],
   },
 ]);

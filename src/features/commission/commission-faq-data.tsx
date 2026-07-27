@@ -30,11 +30,11 @@ export const COMMISSION_FAQ_ITEMS: FAQEntry[] = [
     // answer; the hour is the only fixed part.
     question: 'How long does it last?',
     answer:
-      'One hour for the submission window, then it depends on how far apart you space the releases. Ten people releasing 30 minutes apart puts the finished album about six hours out. It runs in the background either way... nobody has to sit and watch it happen.',
+      'One hour for the submission window, then it depends on how far apart you space the releases. Ten people releasing 30 minutes apart puts the finished mixtape about six hours out. It runs in the background either way... nobody has to sit and watch it happen.',
   },
   {
-    question: 'Who can listen to our album?',
+    question: 'Who can listen to our mixtape?',
     answer:
-      'Every album is currently public. That cuts both ways in your favour: family and friends who are not in the room can listen along and vote as the songs drop, and Slop Bop listeners can find you.',
+      'Every mixtape is currently public. That cuts both ways in your favour: family and friends who are not in the room can listen along and vote as the songs drop, and Slop Bop listeners can find you.',
   },
 ];

@@ -21,7 +21,7 @@ import { ContactForm } from './ContactForm';
  * carousel changes; the framing, the selection and the fill stay, and
  * CommissionPage never learns about it.
  */
-export function AlbumOrderForm() {
+export function MixtapeOrderForm() {
   const { artists } = useArtists();
   // Index rather than an id: the first artist is featured by default, and the
   // list is only known once it loads.

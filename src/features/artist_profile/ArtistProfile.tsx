@@ -1,21 +1,21 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useArtist } from '../../hooks/useArtist';
-import { useLiveMixtape } from '../../hooks/useLiveMixtape';
+import { useLiveJam } from '../../hooks/useLiveJam';
 import ExpandableBio from './ExpandableBio';
 import TagPills from '../../primitives/TagPills';
 import Img from '../../primitives/Img';
 import Discography from './Discography';
-import LiveMixtapeCard from './LiveMixtapeCard';
+import LiveJamCard from './LiveJamCard';
 
 export default function ArtistProfile() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const artistId = id ?? '';
   const { artist, loading } = useArtist(artistId);
-  // An open mixtape makes the artist "live" — see useLiveMixtape. It loads
+  // An open jam makes the artist "live" — see useLiveJam. It loads
   // alongside the artist rather than gating the page: the profile is worth
   // showing immediately, and the badge and card just appear when it resolves.
-  const { mixtape } = useLiveMixtape(artistId);
+  const { jam } = useLiveJam(artistId);
 
   if (loading) {
     return (
@@ -59,7 +59,7 @@ export default function ArtistProfile() {
 
       {/* Artist info — overlaps the hero image */}
       <div className="artist-hero-content flex flex-col gap-md p-lg">
-        {mixtape && (
+        {jam && (
           <span className="live-badge">
             <span className="live-badge__dot" />
             Live
@@ -79,9 +79,9 @@ export default function ArtistProfile() {
         {/* Pushed well off the genre pills — sitting one gap below them it read
             as a continuation of the bio block. No section header: the card is
             loud enough to announce itself, and titling it only added clutter. */}
-        {mixtape && (
+        {jam && (
           <div className="mt-lg">
-            <LiveMixtapeCard mixtape={mixtape} />
+            <LiveJamCard jam={jam} />
           </div>
         )}
       </div>

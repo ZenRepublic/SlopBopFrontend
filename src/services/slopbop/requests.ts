@@ -21,11 +21,15 @@ export interface SongRequestResult {
 // Why a collection isn't accepting submissions. Shared by the collection
 // detail's `request_status.reason` and the submit endpoint's 409 body.
 export type RequestClosedReason =
-  | 'not_started'     // before submission_start
-  | 'deadline_passed' // past submission_deadline
+  | 'not_started'     // before submission_start (mixtape only — a jam has no window)
+  | 'deadline_passed' // past submission_deadline (mixtape only)
   | 'full'      // submission_count reached max_tracks
   | 'not_configured'  // max_tracks never authored
-  | 'not_an_album';   // the collection is not an album type (submit only applies to albums)
+  // The collection's type takes no submissions at all — i.e. a plain `album`,
+  // which the artist authors rather than crowdsources. The string is the
+  // backend's wire value and is left verbatim despite the rename: nothing here
+  // branches on it, so renaming it frontend-side would only invent a mismatch.
+  | 'not_an_album';
 
 // Discriminated outcome of submit:
 //   ok         → the new request id + the updated window

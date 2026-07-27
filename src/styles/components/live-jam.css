@@ -1,5 +1,5 @@
 /* ============================================================
-   Live Mixtape — the "this artist is running a session right
+   Live Jam — the "this artist is running a session right
    now" pair on the artist profile: the LIVE badge above the
    name, and the call-to-action card below the bio.
 
@@ -46,7 +46,7 @@
 
 /* The CTA card. Same red edge as the badge — that shared colour is what ties it
    back to the LIVE mark up by the artist's name. */
-.live-mixtape {
+.live-jam {
   display: flex;
   align-items: stretch;
   gap: var(--space-md);
@@ -62,12 +62,12 @@
   padding: var(--space-sm);
   cursor: pointer;
   transition: transform var(--transition-base);
-  animation: live-mixtape-pulse 2.2s ease-in-out infinite;
+  animation: live-jam-pulse 2.2s ease-in-out infinite;
 }
 
 /* Breathing red glow on the edge. Slower than the badge dot on purpose — they
    shouldn't tick together, and the card is ambient where the dot is a signal. */
-@keyframes live-mixtape-pulse {
+@keyframes live-jam-pulse {
   0%, 100% {
     box-shadow: 0 0 6px 0 color-mix(in srgb, var(--color-error) 30%, transparent);
   }
@@ -76,18 +76,18 @@
   }
 }
 
-.live-mixtape:active {
+.live-jam:active {
   transform: scale(0.98);
 }
 
-.live-mixtape__cover {
+.live-jam__cover {
   flex-shrink: 0;
   width: 88px;
   border-radius: var(--radius-md);
   overflow: hidden;
 }
 
-.live-mixtape__body {
+.live-jam__body {
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -97,7 +97,7 @@
 }
 
 /* Capacity gauge — how full the tape is, at a glance. */
-.live-mixtape__gauge {
+.live-jam__gauge {
   height: 4px;
   border-radius: var(--radius-sm);
   background: var(--track-bg);
@@ -106,7 +106,7 @@
 
 /* Lime — the card's one non-red element. Against all that red it's the thing
    your eye catches, and it makes the fill read as progress rather than trim. */
-.live-mixtape__gauge-fill {
+.live-jam__gauge-fill {
   height: 100%;
   background: var(--accent);
   border-radius: inherit;
@@ -114,7 +114,7 @@
 }
 
 /* The capacity read-out — white, stepped back from the title. */
-.live-mixtape__count {
+.live-jam__count {
   font-size: var(--font-size-xs);
   color: var(--white);
   opacity: 0.7;
@@ -122,7 +122,7 @@
 
 /* The artist's quoted line. Italic and dulled so it reads as someone speaking
    rather than as label copy — the card's loud part is the red frame, not this. */
-.live-mixtape__cta {
+.live-jam__cta {
   font-size: var(--font-size-sm);
   font-style: italic;
   line-height: 1.35;
@@ -137,7 +137,7 @@
   }
 
   /* Keep a static glow so the card still reads as lit, just not moving. */
-  .live-mixtape {
+  .live-jam {
     animation: none;
     box-shadow: 0 0 12px 1px color-mix(in srgb, var(--color-error) 45%, transparent);
   }

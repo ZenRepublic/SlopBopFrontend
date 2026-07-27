@@ -57,12 +57,12 @@ export default function AboutPage() {
       <section className="flex flex-col gap-md px-md">
         <div className="flex flex-col gap-xs">
           <p className="eyebrow">Introducing</p>
-          <h2 className="font-display text-2xl">Album Commissions</h2>
+          <h2 className="font-display text-2xl">Mixtape Commissions</h2>
         </div>
         <p className="text-base leading-relaxed">
           Rent one of our artists for your group's next day out - a birthday, an offsite, a
           hackathon. Everyone writes lyrics, the artist records them, and by the evening there's an{' '}
-          <span className="highlight">album</span> as an artifact of your special day.
+          <span className="highlight">mixtape</span> as an artifact of your special day.
         </p>
         <p className="text-base leading-relaxed">
           The group's favourite song gets a music video on our channels.

@@ -1,8 +1,8 @@
 import { FAQ } from '../../primitives/FAQ';
-import { ExampleAlbum } from './ExampleAlbum';
+import { ExampleMixtape } from './ExampleMixtape';
 import { DayBreakdown } from './DayBreakdown';
 import { PrizeVideo } from './PrizeVideo';
-import { AlbumOrderForm } from './order/AlbumOrderForm';
+import { MixtapeOrderForm } from './order/MixtapeOrderForm';
 import { COMMISSION_FAQ_ITEMS } from './commission-faq-data';
 
 export default function CommissionPage() {
@@ -17,7 +17,7 @@ export default function CommissionPage() {
       <header className="flex flex-col">
         <img src="/Branding/contact-visual.png" alt="" className="w-full block" />
         <div className="flex flex-col gap-xs px-md pt-md">
-          <p className="eyebrow">Ever wanted to create an album?</p>
+          <p className="eyebrow">Ever wanted to create a mixtape?</p>
           <h1 className="font-display text-3xl leading-tight">Now you can!</h1>
         </div>
       </header>
@@ -30,11 +30,11 @@ export default function CommissionPage() {
       <section className="flex flex-col gap-md px-md">
         <p className="text-base leading-relaxed">
           Hire a synthetic artist for an unforgettable group attraction —
-          <span className="highlight"> producing a music album</span>.
+          <span className="highlight"> producing a mixtape</span>.
         </p>
         <p className="text-base leading-relaxed">
           Your chosen artist has a custom voice, personality, appearance and music taste. With you as
-          authors of the lyrics, they can produce a cohesive album that encapsulates the vibe and
+          authors of the lyrics, they can produce a cohesive mixtape that encapsulates the vibe and
           energy of your group.
         </p>
       </section>
@@ -46,10 +46,10 @@ export default function CommissionPage() {
 
           The lines underneath are the bonding pitch, and this is the one place
           they land without being a claim: you've just heard what a track sounds
-          like, so the album is already real by the time they say what it does
+          like, so the mixtape is already real by the time they say what it does
           for the group. */}
       <section className="flex flex-col gap-lg px-md">
-        <ExampleAlbum />
+        <ExampleMixtape />
         <div className="flex flex-col gap-md">
           <p className="text-base leading-relaxed">
             This experience is an additional layer of fun throughout a special day with a group of
@@ -79,7 +79,7 @@ export default function CommissionPage() {
             <span className="highlight"> go public</span>.
           </p>
           <p className="text-base leading-relaxed">
-            24 hours after the album is completed, the song with the highest score will upgrade into
+            24 hours after the mixtape is completed, the song with the highest score will upgrade into
             a music video and be posted on our social channels for a chance to go viral!
           </p>
         </div>
@@ -95,7 +95,7 @@ export default function CommissionPage() {
       {/* The ask. Self-contained down to its own background, so the page ends
           where the pitch does — everything past this line belongs to ordering,
           including whatever the ask turns into next. */}
-      <AlbumOrderForm />
+      <MixtapeOrderForm />
     </div>
   );
 }

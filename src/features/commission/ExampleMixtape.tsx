@@ -1,22 +1,22 @@
 import { isReleased, type Song } from '../../services/slopbop';
-import { useAlbum } from '../../hooks/useAlbum';
+import { useMixtape } from '../../hooks/useMixtape';
 import { useArtist } from '../../hooks/useArtist';
 import { useMusicPlayer, type Track } from '../../context/MusicPlayerContext';
 import SingleCard from '../../components/songlist/SingleCard';
 import Img from '../../primitives/Img';
 
-// A real album, so the keepsake is something you can hear instead of imagine.
-const SHOWCASE_ALBUM_ID = '6a47b0993152ea46f01ce86d';
+// A real mixtape, so the keepsake is something you can hear instead of imagine.
+const SHOWCASE_MIXTAPE_ID = '6a47b0993152ea46f01ce86d';
 
-// A sneak peek, not the album page: the best few rows, no sort toggle, no link
-// through to /albums/:id. The queue is only what's on screen — playing on into
+// A sneak peek, not the mixtape page: the best few rows, no sort toggle, no link
+// through to /mixtapes/:id. The queue is only what's on screen — playing on into
 // tracks nobody can see would be the player going somewhere it wasn't asked to.
 const PREVIEW_COUNT = 3;
 
-export function ExampleAlbum() {
-  const { album, songs, loading } = useAlbum(SHOWCASE_ALBUM_ID);
-  // Only resolves once the album lands — an empty key is a no-op fetch.
-  const { artist } = useArtist(album?.artist_id ?? '');
+export function ExampleMixtape() {
+  const { mixtape, songs, loading } = useMixtape(SHOWCASE_MIXTAPE_ID);
+  // Only resolves once the mixtape lands — an empty key is a no-op fetch.
+  const { artist } = useArtist(mixtape?.artist_id ?? '');
   const { playQueue, track } = useMusicPlayer();
 
   if (loading) {
@@ -28,7 +28,7 @@ export function ExampleAlbum() {
   }
 
   // The pitch stands on its own — a broken card is worse than no card.
-  if (!album) return null;
+  if (!mixtape) return null;
 
   // Best-first, by SongList's 'popular' score (bops net of slops) — a showcase
   // should lead with what the group actually voted up, not whatever landed
@@ -50,7 +50,7 @@ export function ExampleAlbum() {
     lyrics: song.lyrics,
     author: song.author,
     stats: song.stats,
-    artistId: album.artist_id,
+    artistId: mixtape.artist_id,
     artistName: artist?.name,
   });
 
@@ -65,14 +65,14 @@ export function ExampleAlbum() {
     <div className="bg-surface border border-border rounded-lg overflow-hidden">
       <div className="flex gap-md p-md">
         <Img
-          src={album.cover_url || '/Images/default_song_cover.png'}
+          src={mixtape.cover_url || '/Images/default_song_cover.png'}
           alt=""
           className="w-24 h-24 rounded-md flex-shrink-0"
           imgClassName="object-cover"
         />
         <div className="flex flex-col justify-center gap-0.5 min-w-0">
-          <p className="subtle text-[10px] uppercase tracking-wider">Example album</p>
-          <h3 className="font-display text-lg leading-tight">{album.title || 'Untitled'}</h3>
+          <p className="subtle text-[10px] uppercase tracking-wider">Example mixtape</p>
+          <h3 className="font-display text-lg leading-tight">{mixtape.title || 'Untitled'}</h3>
           <p className="text-sm text-muted truncate">
             {playable.length} songs{artist?.name ? ` · ${artist.name}` : ''}
           </p>

@@ -10,7 +10,7 @@ This document covers the conceptual architecture and the decisions behind it. Fo
 
 SlopBop is an **agentic music label**: a cast of synthetic artists release songs, and the audience judges them. The thesis the label is betting on — and the line the About page opens with — is that AI music only *bops* when there's an actual artist behind it, with a personality, a voice and a taste of its own. The audience's vote is what settles that bet, which is why judging is a first-class act and not a feature.
 
-The commercial breakout is **group album creation**, sold as **Album Commissions**. A host rents one of the synthetic artists for a private activity with a group: everyone writes the lyrics for one short (~30s) song, the artist records them, and the finished songs release one-by-one on a shared **album page** for the group to listen, react, and vote on. The top-voted song earns a music video posted to our socials.
+The commercial breakout is **group mixtape creation**, sold as **Mixtape Commissions**. A host rents one of the synthetic artists for a private activity with a group: everyone writes the lyrics for one short (~30s) song, the artist records them, and the finished songs release one-by-one on a shared **mixtape page** for the group to listen, react, and vote on. The top-voted song earns a music video posted to our socials.
 
 The public app is trimmed to point at this. The NavBar is **About · Roster · Commission**. Two earlier surfaces — the live simulation (`/map`) and the audition funnel (`/apply`) — are **hidden from the nav but still fully routed and working**, deferred rather than removed. See `SIMULATION.md`.
 
@@ -43,28 +43,28 @@ A user lands on About, browses the roster, and listens to artists' music — all
 Three surfaces carry one argument, in order, and they're written to hand off to each other:
 
 1. **About (`/`)** — states the label's thesis, shows a featured artist, and *teases* the commission. The teaser deliberately withholds the mechanic; if it explained the whole product there'd be no reason to tap through.
-2. **Commission (`/commission`)** — the pitch: the offer, a real playable example album, how a day runs (`DayBreakdown`), the prize (`PrizeVideo`), and the FAQ. The FAQ is the objection layer and sits *above* the ask on purpose, so nothing unresolved is still in the reader's head when the form arrives.
-3. **`AlbumOrderForm`** — the ask. Choosing an artist and making the ask are one act, so they're one component: the carousel's selection feeds straight into what gets sent.
+2. **Commission (`/commission`)** — the pitch: the offer, a real playable example mixtape, how a day runs (`DayBreakdown`), the prize (`PrizeVideo`), and the FAQ. The FAQ is the objection layer and sits *above* the ask on purpose, so nothing unresolved is still in the reader's head when the form arrives.
+3. **`MixtapeOrderForm`** — the ask. Choosing an artist and making the ask are one act, so they're one component: the carousel's selection feeds straight into what gets sent.
 
 **The ask is an email today.** `ContactForm` opens a `mailto:` to `slopboptv@gmail.com`. There is no payment or ordering flow. When one arrives — Stripe, a booking calendar — only the piece below the carousel changes; the framing, the selection and the section's own background stay, and `CommissionPage` never learns about it. Pricing is deliberately off the page: inbound only, quoted over email.
 
-**Every album is currently public**, which is what the FAQ says out loud. There is no private or unlisted mode, and no authentication to build one on. The known cheap path is unlisted-by-default (album IDs are unguessable Mongo ObjectIds, so simply not listing an album is most of the work) — but that buys *unlisted*, not *private*, and copy shouldn't promise otherwise.
+**Every mixtape is currently public**, which is what the FAQ says out loud. There is no private or unlisted mode, and no authentication to build one on. The known cheap path is unlisted-by-default (collection IDs are unguessable Mongo ObjectIds, so simply not listing a mixtape is most of the work) — but that buys *unlisted*, not *private*, and copy shouldn't promise otherwise.
 
 ---
 
 ## Music Player
 
-Global playback state lives in `MusicPlayerContext` — a single persistent `HTMLAudioElement`, not recreated per track. Songs can be played from the artist profile, the album page, the Commission page's example album, or directly from a Roster card (which surfaces each artist's top-rated track as a one-tap shortcut). The MiniPlayer (sticky bottom bar) and full MusicPlayer overlay both read from this shared context.
+Global playback state lives in `MusicPlayerContext` — a single persistent `HTMLAudioElement`, not recreated per track. Songs can be played from the artist profile, any collection page, the Commission page's example mixtape, or directly from a Roster card (which surfaces each artist's top-rated track as a one-tap shortcut). The MiniPlayer (sticky bottom bar) and full MusicPlayer overlay both read from this shared context.
 
 Playback is a pure static-layer concern with **no sim gating**. Visibility is instead gated on the **real wall clock**: `release_date` is a real-world UTC timestamp, and a song whose `release_date` is still in the future hasn't dropped yet — the song list renders the soonest such song as a "processing" countdown card that reveals it automatically when its moment arrives. Songs already past their `release_date` (or with none) are always visible. `release_date` doubles as the catalogue sort key.
 
-This is the same mechanic a commissioned album's staggered release runs on. It is **not** the sim's `sim_time` drip-feed — two different clocks, and conflating them is a real bug waiting to happen.
+This is the same mechanic a commissioned mixtape's staggered release runs on. It is **not** the sim's `sim_time` drip-feed — two different clocks, and conflating them is a real bug waiting to happen.
 
 ---
 
 ## Images & Media Loading
 
-Cover art, artist photos, and album images are the heaviest thing the app loads. They live on **Arweave** (a decentralized, permanent store) and are served through the **`turbo-gateway.com`** gateway. Two facts drive the whole strategy: we **can't set response headers** on them (no `Cache-Control`, no server-side resize — it's not our server), and Arweave is **immutable and content-addressed** — a given URL's bytes can *never* change.
+Cover art, artist photos, and cover images are the heaviest thing the app loads. They live on **Arweave** (a decentralized, permanent store) and are served through the **`turbo-gateway.com`** gateway. Two facts drive the whole strategy: we **can't set response headers** on them (no `Cache-Control`, no server-side resize — it's not our server), and Arweave is **immutable and content-addressed** — a given URL's bytes can *never* change.
 
 The download size itself is fixed at **upload time**, not here. The upload pipeline saves images as 1024×1024 WebP (not 2048 PNG), which is the only place bytes actually get smaller. **The frontend cannot shrink a download** — a browser must fetch the whole file before it can show it. So the frontend solves the two things it *can*: how the wait feels, and never waiting twice.
 
@@ -76,6 +76,32 @@ The download size itself is fixed at **upload time**, not here. The upload pipel
 
 ---
 
+## The three collection types
+
+A **collection** is the generic container for an artist's songs, and `type`
+discriminates three of them. They share one shape and one detail read
+(`fetchCollection`); what separates them is *how the songs get there*, and that
+difference drives every surface decision below.
+
+| type | songs come from | window | lifecycle | surface |
+|---|---|---|---|---|
+| `album` | the artist — authored | none | permanent | `/albums/:id`, listed in Discography |
+| `mixtape` | a commissioning group | start → deadline, batch release | permanent | `/mixtapes/:id`, reached by its own link |
+| `jam` | anyone, first-come | none, capacity only | **deleted when the artist picks the winner** | `/jams/:id`, the LIVE card on the profile |
+
+Two consequences worth holding onto:
+
+- **Only `album` appears in the Discography.** A jam is a live session, not a
+  release; a commissioned mixtape is a group's artifact from their own day, and
+  listing it would file someone's birthday party under the label's catalogue.
+- **Only the crowdsourced two carry `request_status`.** An album returns none, so
+  the submission UI has nothing to gate on and simply never renders.
+
+A jam has no lifecycle flag — its *existence* is the live state, which is why
+"does this artist have a jam" (`useLiveJam`) is a filtered list read.
+
+---
+
 ## Routing
 
 ```
@@ -84,8 +110,9 @@ The download size itself is fixed at **upload time**, not here. The upload pipel
 /roster            RosterPage      — artist directory + top-rated song per artist  [nav]
 /commission        CommissionPage  — commission an artist: offer + inquiry form    [nav]
 /artists/:id       ArtistProfile   — static profile + discography
-/albums/:id        AlbumPage       — album/EP tracklist
-/mixtapes/:id      MixtapePage     — mixtape tracklist
+/albums/:id        AlbumPage       — authored album: plain tracklist
+/mixtapes/:id      MixtapePage     — commissioned mixtape: tracklist + windowed submissions
+/jams/:id          JamPage         — live jam: tracklist + capacity-bound submissions
 /map               MapPage         — self-contained live simulation, world map     (hidden)
 /apply             ApplicationForm — audition form to join a future season         (hidden)
 ```

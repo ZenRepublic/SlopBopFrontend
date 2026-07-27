@@ -1,7 +1,7 @@
 /* ============================================================
-   Mixtape world — the background for a mixtape page
+   Jam world — the background for a jam page
 
-   The album's twirl is a finished room. A mixtape is the demo world: every song
+   The mixtape's twirl is a finished room. A jam is the demo world: every song
    is a maybe, only the most popular one survives into a Single, and the page
    should feel like it was caught mid-build. Two gestures, dark and specific:
 
@@ -31,16 +31,16 @@
    Both layers sit at z-index -2 exactly as the default background does, which
    keeps -1 free as the section-fill plane.
 
-   On colour: the album commits to blue and lime as a wash. Here every palette
+   On colour: the mixtape commits to blue and lime as a wash. Here every palette
    colour gets a cell — lime, amber, coral, sage, blue, and steel for a cell
    that's lit but empty — though only ever a few at a time, and never the same
-   few. That's the mixtape in one image: all of it, none of it decided yet.
+   few. That's the jam in one image: all of it, none of it decided yet.
    ============================================================ */
 
 /* The void — the app's darkest surface, pushed past navy so the lit cells have
    somewhere to be bright against. Mixed rather than hard-coded: a palette swap
    still reaches it, because it's just navy with the lights off. */
-body.mixtape-world {
+body.jam-world {
   background-color: color-mix(in srgb, var(--p-navy) 62%, black);
 
   /* One lit cell per palette colour, each dimmed to where it sits on the void
@@ -64,8 +64,8 @@ body.mixtape-world {
    overscan is headroom for the stutter, which never travels more than a few px.
    Overriding the default's 300%/-50% box wholesale — an off-screen origin makes
    both of those impossible to reason about. */
-body.mixtape-world::before,
-body.mixtape-world::after {
+body.jam-world::before,
+body.jam-world::after {
   top: -20px;
   left: -20px;
   width: calc(100% + 40px);
@@ -86,7 +86,7 @@ body.mixtape-world::after {
    keyframes flip each layer's background-size between 43px and nothing: a layer
    sized 0 simply isn't painted, which is what gets seven independent rhythms out
    of a single element. */
-body.mixtape-world::before {
+body.jam-world::before {
   background-image:
     linear-gradient(var(--tile-lime), var(--tile-lime)),
     linear-gradient(var(--tile-amber), var(--tile-amber)),
@@ -106,14 +106,14 @@ body.mixtape-world::before {
   background-repeat: no-repeat;
   /* The lit state, and what reduced motion holds. */
   background-size: 43px 43px;
-  animation: mixtapeTilesA 9.3s steps(1, end) infinite;
+  animation: jamTilesA 9.3s steps(1, end) infinite;
 }
 
 /* The draft grid — the drawing before the thing gets drawn — plus tile group
    two. The grid's two layers come first in the list so they paint over the tiles
    below them. Two animations, because they drive different properties: the
    stutter moves the element, the flicker sizes its layers. */
-body.mixtape-world::after {
+body.jam-world::after {
   content: '';
   position: fixed;
   z-index: -2;
@@ -139,8 +139,8 @@ body.mixtape-world::after {
   background-repeat: repeat, repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat;
   background-size: auto auto, auto auto, 43px 43px, 43px 43px, 43px 43px, 43px 43px, 43px 43px, 43px 43px;
   animation:
-    mixtapeStutter 13s steps(1, end) infinite,
-    mixtapeTilesB 7.1s steps(1, end) infinite;
+    jamStutter 13s steps(1, end) infinite,
+    jamTilesB 7.1s steps(1, end) infinite;
 }
 
 /* The flicker. Two things make it read as electrical rather than mechanical:
@@ -153,7 +153,7 @@ body.mixtape-world::after {
 
    Reading these: one column per background layer, in the order they're listed
    above. `43px 43px` is lit, `0 0` is dark. */
-@keyframes mixtapeTilesA {
+@keyframes jamTilesA {
   0% { background-size: 43px 43px, 0 0, 0 0, 43px 43px, 0 0, 0 0, 43px 43px; }
   4% { background-size: 43px 43px, 0 0, 43px 43px, 43px 43px, 0 0, 0 0, 43px 43px; }
   5.5% { background-size: 43px 43px, 0 0, 0 0, 43px 43px, 0 0, 0 0, 0 0; }
@@ -174,7 +174,7 @@ body.mixtape-world::after {
 
 /* Same idea, different ragged timing. The two `auto auto` columns at the front
    are the grid's own layers — they're not tiles and never blink. */
-@keyframes mixtapeTilesB {
+@keyframes jamTilesB {
   0% { background-size: auto auto, auto auto, 0 0, 43px 43px, 0 0, 43px 43px, 0 0, 43px 43px; }
   7% { background-size: auto auto, auto auto, 43px 43px, 43px 43px, 0 0, 43px 43px, 0 0, 0 0; }
   8.5% { background-size: auto auto, auto auto, 0 0, 43px 43px, 0 0, 43px 43px, 43px 43px, 0 0; }
@@ -196,7 +196,7 @@ body.mixtape-world::after {
    of a few frames, then dead still — a glitch you can set your watch by stops
    reading as one, so the gaps are uneven and most of the loop is nothing
    happening. */
-@keyframes mixtapeStutter {
+@keyframes jamStutter {
   0%, 70% { transform: translate3d(0, 0, 0); }
   70.6% { transform: translate3d(-6px, 2px, 0); }
   71.4% { transform: translate3d(4px, -1px, 0); }
@@ -210,8 +210,8 @@ body.mixtape-world::after {
 /* Grid and tiles stay — they're the idea. The blinking and the stutter go, and
    the tiles hold their lit state from the rules above. */
 @media (prefers-reduced-motion: reduce) {
-  body.mixtape-world::before,
-  body.mixtape-world::after {
+  body.jam-world::before,
+  body.jam-world::after {
     animation: none;
   }
 }

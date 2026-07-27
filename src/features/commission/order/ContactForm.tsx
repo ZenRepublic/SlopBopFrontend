@@ -58,7 +58,7 @@ export function ContactForm({ selectedArtistName }: Props) {
         value={message}
         onChange={setMessage}
         rows={6}
-        placeholder="Tell us about your group and the album you have in mind."
+        placeholder="Tell us about your group and the mixtape you have in mind."
         required
       />
 

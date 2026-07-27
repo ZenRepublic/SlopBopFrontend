@@ -23,13 +23,13 @@
 @import './components/bop-meter.css';
 @import './components/processing-card.css';
 @import './components/deadline-strip.css';
-@import './components/live-mixtape.css';
+@import './components/live-jam.css';
 @import './components/testimonials.css';
 @import './components/faq.css';
 @import './components/section-fill.css';
 @import './components/facet-card.css';
 @import './components/album-world.css';
-@import './components/mixtape-world.css';
+@import './components/jam-world.css';
 @import './components/transitions.css';
 
 /* Tailwind CSS */
