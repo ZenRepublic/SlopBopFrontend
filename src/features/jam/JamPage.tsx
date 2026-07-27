@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
-import { useAlbum } from '../../hooks/useAlbum';
+import { useMixtape } from '../../hooks/useMixtape';
 import { useArtist } from '../../hooks/useArtist';
 import SongList from '../../components/songlist/SongList';
 import Img from '../../primitives/Img';
-import Submissions from './Submissions';
+import MixtapeSubmissions from './MixtapeSubmissions';
 
 const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -17,24 +17,24 @@ function formatDate(iso: string): string {
   return `${MONTH_NAMES[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
 }
 
-export default function AlbumPage() {
+export default function MixtapePage() {
   const { id } = useParams<{ id: string }>();
-  const { album, songs, requestStatus, loading: albumLoading, refetch } = useAlbum(id ?? '');
-  const { artist, loading: artistLoading } = useArtist(album?.artist_id ?? '');
+  const { mixtape, songs, requestStatus, loading: mixtapeLoading, refetch } = useMixtape(id ?? '');
+  const { artist, loading: artistLoading } = useArtist(mixtape?.artist_id ?? '');
 
   // Toggles the cover image out for a QR code pointing at this same page, so a
-  // host can put the album on screen and let a room scan their way in.
+  // host can flash the mixtape on screen and let people scan in to submit.
   const [showQR, setShowQR] = useState(false);
 
-  // Swap the app's diagonal stripes for the album's twirl for as long as this
-  // page is mounted (styles/components/album-world.css). Above the early returns
-  // so the loading and not-found states land in the same world.
+  // Swap the app's diagonal stripes for the demo world — an unfinished skin with
+  // the code showing through (styles/components/mixtape-world.css). Above the
+  // early returns so the loading and not-found states land in the same world.
   useEffect(() => {
-    document.body.classList.add('album-world');
-    return () => document.body.classList.remove('album-world');
+    document.body.classList.add('mixtape-world');
+    return () => document.body.classList.remove('mixtape-world');
   }, []);
 
-  const loading = albumLoading || artistLoading;
+  const loading = mixtapeLoading || artistLoading;
 
   if (loading) {
     return (
@@ -44,10 +44,10 @@ export default function AlbumPage() {
     );
   }
 
-  if (!album) {
+  if (!mixtape) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <p className="text-muted">Album not found</p>
+        <p className="text-muted">Mixtape not found</p>
       </div>
     );
   }
@@ -66,8 +66,8 @@ export default function AlbumPage() {
           </div>
         ) : (
           <Img
-            src={album.cover_url || '/Images/default_song_cover.png'}
-            alt={album.title}
+            src={mixtape.cover_url || '/Images/default_song_cover.png'}
+            alt={mixtape.title}
             className="w-full h-full"
           />
         )}
@@ -85,27 +85,30 @@ export default function AlbumPage() {
       </div>
 
       <div className="flex flex-col gap-xs p-lg">
-        <h1 className="font-display text-xl">{album.title || 'Untitled'}</h1>
+        <h1 className="font-display text-xl">{mixtape.title || 'Untitled'}</h1>
         <p className="text-sm ml-md">
-          Album by{' '}
+          Mixtape by{' '}
           <Link
             to={`/artists/${artist?.artist_id}`}
             className="underline"
           >
             {artist?.name ?? 'Unknown'}
           </Link>
-          {album.created_at && <> | {formatDate(album.created_at)}</>}
+          {mixtape.created_at && <> | {formatDate(mixtape.created_at)}</>}
         </p>
       </div>
 
       <div className="flex flex-col gap-lg px-lg pb-lg">
+        {/* Songs first, and always shown: mixtape tracks drip in one at a time as
+            each submission is recorded, not as a batch — so there's no "before
+            release" phase to hide. */}
         <SongList
           songs={songs}
           onRefetch={refetch}
           toTrack={song => ({
             id: song._id,
             title: song.title || 'Untitled',
-            coverUrl: song.cover_url || album.cover_url,
+            coverUrl: song.cover_url || mixtape.cover_url,
             audioUrl: song.audio_url || '',
             duration: song.duration,
             lyrics: song.lyrics,
@@ -117,11 +120,10 @@ export default function AlbumPage() {
         />
 
         {requestStatus && (
-          <Submissions
-            albumId={album._id}
+          <MixtapeSubmissions
+            mixtapeId={mixtape._id}
             artistName={artist?.name}
             status={requestStatus}
-            songCount={songs.length}
             refresh={refetch}
           />
         )}
