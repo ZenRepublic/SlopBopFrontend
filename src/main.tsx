@@ -7,6 +7,7 @@ import {
   createBrowserRouter,
   RouterProvider,
   Outlet,
+  Navigate,
   useLocation,
 } from 'react-router-dom';
 
@@ -42,6 +43,7 @@ import CommissionPage from './features/commission/CommissionPage';
 import ApplicationForm from './features/apply/ApplicationForm';
 import { SOLANA_CHAIN, HELIUS_RPC_URL } from './config/network';
 import { ToastProvider } from './context/ToastContext';
+import { AuthProvider } from './context/AuthContext';
 import { MusicPlayerProvider } from './context/MusicPlayerContext';
 import MusicPlayer from './components/MusicPlayer';
 import MiniPlayer from './components/MiniPlayer';
@@ -163,7 +165,11 @@ const router = createBrowserRouter([
       { path: '/', element: <AboutPage /> },
       { path: '/about', element: <AboutPage /> },
       { path: '/roster', element: <RosterPage /> },
-      { path: '/commission', element: <CommissionPage /> },
+      { path: '/order', element: <CommissionPage /> },
+      // The offer used to live at /commission and the page is still named for
+      // it. Kept as a redirect because this is a public marketing URL — anything
+      // already shared or indexed should land on the offer, not on nothing.
+      { path: '/commission', element: <Navigate to="/order" replace /> },
       { path: '/map', element: <MapPage /> },
       { path: '/apply', element: <ApplicationForm /> },
       { path: '/artists/:id', element: <ArtistProfile /> },
@@ -183,11 +189,16 @@ if (!container) {
 createRoot(container).render(
   <StrictMode>
     <WalletContextProvider>
-      <ToastProvider>
-        <MusicPlayerProvider>
-          <RouterProvider router={router} />
-        </MusicPlayerProvider>
-      </ToastProvider>
+      {/* Inside the wallet providers — the session is built from the adapter's
+          connected key — and outside the router, so the nav and every page read
+          the same one session. */}
+      <AuthProvider>
+        <ToastProvider>
+          <MusicPlayerProvider>
+            <RouterProvider router={router} />
+          </MusicPlayerProvider>
+        </ToastProvider>
+      </AuthProvider>
     </WalletContextProvider>
   </StrictMode>
 );

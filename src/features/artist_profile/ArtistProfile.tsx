@@ -11,7 +11,10 @@ export default function ArtistProfile() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const artistId = id ?? '';
-  const { artist, loading } = useArtist(artistId);
+  // `isOwner` comes from this page's own fetch, not from comparing the connected
+  // key to `owner_wallet` — the server is the one that decides, and it answers
+  // this URL differently depending on the token it was handed.
+  const { artist, isOwner, loading } = useArtist(artistId);
   // An open jam makes the artist "live" — see useLiveJam. It loads
   // alongside the artist rather than gating the page: the profile is worth
   // showing immediately, and the badge and card just appear when it resolves.
@@ -59,6 +62,13 @@ export default function ArtistProfile() {
 
       {/* Artist info — overlaps the hero image */}
       <div className="artist-hero-content flex flex-col gap-md p-lg">
+        {/* Owner's view of the same public page. There are no owner-only actions
+            on the backend yet, so this says who you are and stops there rather
+            than drawing buttons with nothing to call. */}
+        {isOwner && (
+          <span className="owner-badge">Signed in as this artist</span>
+        )}
+
         {jam && (
           <span className="live-badge">
             <span className="live-badge__dot" />

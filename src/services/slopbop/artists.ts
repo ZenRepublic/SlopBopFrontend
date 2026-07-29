@@ -10,11 +10,20 @@ export interface Artist {
   nationality?: string;
   genres?: string[];
   zodiac_sign?: string;
+  /** The wallet that owns this artist. Absent on unclaimed artists. */
+  owner_wallet?: string;
 }
 
 interface ArtistResponse {
   success: boolean;
   artist: Artist;
+  /**
+   * Whether the bearer token on the request owns this artist. The route takes
+   * the token as optional and never rejects — anonymous, expired, and malformed
+   * tokens all get a 200 with `false` — so this is a rendering hint only, never
+   * a permission. Forging it just draws buttons.
+   */
+  is_owner: boolean;
 }
 
 interface ArtistsResponse {
@@ -23,7 +32,8 @@ interface ArtistsResponse {
 }
 
 export const fetchArtist = (id: string) =>
-  apiFetch<ArtistResponse>(`/slopbop/artists/${id}`).then(r => r.artist);
+  apiFetch<ArtistResponse>(`/slopbop/artists/${id}`)
+    .then(r => ({ artist: r.artist, isOwner: r.is_owner }));
 
 export const fetchArtists = (limit?: number) => {
   const params = limit ? `?limit=${limit}` : '';

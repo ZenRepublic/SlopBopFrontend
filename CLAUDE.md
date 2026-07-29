@@ -6,9 +6,11 @@ Mobile-first React web app (430px design target) — the public window into Slop
 
 The product has narrowed to its breakout feature: **group mixtape creation**, sold as **Mixtape Commissions**. A host rents one of our synthetic artists for a private activity with a group; everyone writes lyrics for a short song, the artist records them, and the songs release one-by-one on a shared mixtape page for the group to listen, react, and vote on. The top-voted song gets a music video posted to our socials.
 
-The nav is **About · Roster · Commission**. The About page (`/`) states the label's thesis and teases the offer; the **Commission page (`/commission`, `features/commission/`, `CommissionPage`)** carries the pitch and ends with an email inquiry (`ContactForm` → a `mailto:` to `slopboptv@gmail.com`; no payment or ordering flow yet).
+The nav is **About · Roster · Mixtape · Account**. The About page (`/`) states the label's thesis and teases the offer; the **Mixtape page (`/order`, `features/commission/`, `CommissionPage`)** carries the pitch and ends with an email inquiry (`ContactForm` → a `mailto:` to `slopboptv@gmail.com`; no payment or ordering flow yet).
 
 **The offer's specifics live in the code, not here.** Group size, how a day runs, the occasions it fits, the prize, what a buyer needs on the day — all of it is owned by `features/commission/` (`DayBreakdown`, `commission-faq-data.tsx`). Restating any of it in a doc just gives it somewhere to go stale. Pricing is deliberately off the page: inbound only, quoted over email.
+
+The offer is sold as *Mixtape* in the nav but the code still says *commission* — `features/commission/`, `CommissionPage`, `/commission` redirecting to `/order`. That's deliberate: `features/mixtape/` is already taken by the mixtape a group actually receives (`/mixtapes/:id`), and collapsing the two would fuse the thing you buy with the thing you get.
 
 Two earlier surfaces are **hidden from the NavBar but still fully routed and functional** — deferred, not removed:
 
@@ -28,9 +30,17 @@ Env: `VITE_API_URL` (backend base, defaults `http://localhost:5000`), `VITE_SOL_
 - **`src/services/<service>/`** — one folder per backend, one file per resource, with a same-named barrel re-exporting it. Today: `services/slopbop/` (`client`, `artists`, `collections`, `songs`, `sim`, `application`, `admin`, `verification`). **The types here are the API contract** — keep them honest; the rest of the app points at them rather than restating shapes.
 - **`src/hooks/`** — hook-per-resource. Read hooks build on the generic `useResource<T>(fetcher, key, { onError?, pollMs?, cache? })`, which owns the stale-response guard, optional polling, and an `error` value. Pass `cache: true` for data that's static for a session (world map, items, form config) — it caches at module scope and dedupes the in-flight request, so don't hand-roll module-level caching in a hook. Wallet-gated mutations follow a command-shaped pattern (`useWalletAuth` + a submit hook).
 - **`src/features/<feature>/`** — one folder per route/feature: the page plus its components, co-located.
-- **`src/context/`** — true app-wide singletons only: `SimContext` (the live-sim heartbeat, polled while live), `MusicPlayerContext` (one persistent audio element), `ToastContext`.
+- **`src/context/`** — true app-wide singletons only: `SimContext` (the live-sim heartbeat, polled while live), `MusicPlayerContext` (one persistent audio element), `ToastContext`, `AuthContext` (the wallet session — see below).
 - **`src/components/`** — shared UI used across features but not itself a page, and richer than a primitive: app-shell chrome (`NavBar`, the `MusicPlayer` / `MiniPlayer` pair) and cross-feature blocks assembled from primitives (`songlist/` — `SongList` plus its row parts `SingleCard` / `ProcessingCard` / `ratingEmoji`; `songwriter/` — the `SongWriter` lyric instrument plus the `lyricLines` page model it writes on). When two features need the same block it lives here, so no feature reaches into another's folder.
 - **`src/primitives/`** — low-level, presentation-only UI with no domain shape: form controls, `BottomSheet`, `Modal`, `Img`, `TagPills`. If it encodes a product concept or is assembled from other pieces, it's a `components/` block, not a primitive.
+
+## Wallet auth
+
+An artist belongs to a wallet (`owner_wallet`). Signing in is a signature, not a password: `useWalletAuth` runs challenge → sign → verify and stores the 7-day JWT, `AuthProvider` holds that session app-wide, and `apiFetch` attaches it to every request. The token is stored **keyed by wallet address** and dropped when the adapter switches keys or disconnects — a token names one wallet, and a stale one would answer confidently for the wrong owner.
+
+**Account** is an ordinary `TABS` entry in `NavBar`; the only thing separating it from the routed tabs is a `path` of `null`, because its destination isn't a constant. On click it resolves: signed in with one artist, it navigates to `/artists/:id`; anything else opens `AccountSheet` to connect and sign. There is no `/me` page — an owner sees the same URL as everyone else, with more on it.
+
+**Ownership is the server's answer, never the client's.** Gate owner UI on `is_owner` from the artist's own fetch (`useArtist` returns it, and keys its cache on the session so login refetches). Don't compare `publicKey` to `owner_wallet` — and remember `is_owner` is a rendering hint: forging it only draws buttons.
 
 ## Styling — hybrid, two systems by design
 
