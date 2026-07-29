@@ -14,7 +14,7 @@ type Tab = {
 const TABS: Tab[] = [
   { path: '/', emoji: '🎪', label: 'About' },
   { path: '/roster', emoji: '🎭', label: 'Roster' },
-  { path: '/order', emoji: '💽', label: 'Mixtape' },
+  { path: '/commission', emoji: '💽', label: 'Mixtape' },
   { path: null, emoji: '👩🏻‍🎤', label: 'Account' },
   // Deferred features — routes still work, just hidden from the nav for now.
   // Restore by re-adding these entries when Map and Apply come back.

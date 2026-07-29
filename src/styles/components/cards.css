@@ -101,22 +101,3 @@
   position: relative;
   z-index: 10;
 }
-
-/* Shown on your own artist page when the server says the session owns it. Same
-   mark as the LIVE badge so the two stack as one row of status; lime instead of
-   coral because this is a spotlight, not an alarm. */
-.owner-badge {
-  display: inline-flex;
-  align-items: center;
-  align-self: flex-start;
-  border: 1px solid var(--accent);
-  border-radius: var(--radius-sm);
-  background: color-mix(in srgb, var(--accent) 12%, transparent);
-  color: var(--accent);
-  font-family: var(--font-accent);
-  font-size: var(--font-size-xs);
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  padding: 2px var(--space-sm);
-}

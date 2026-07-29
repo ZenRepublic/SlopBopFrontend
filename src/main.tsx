@@ -7,7 +7,6 @@ import {
   createBrowserRouter,
   RouterProvider,
   Outlet,
-  Navigate,
   useLocation,
 } from 'react-router-dom';
 
@@ -41,7 +40,8 @@ import AboutPage from './features/about/AboutPage';
 import RosterPage from './features/roster/RosterPage';
 import CommissionPage from './features/commission/CommissionPage';
 import ApplicationForm from './features/apply/ApplicationForm';
-import { SOLANA_CHAIN, HELIUS_RPC_URL } from './config/network';
+import { SOLANA_CHAIN, HELIUS_RPC_URL, RPC_CONFIG } from './config/network';
+import { devWallet, selectDevWallet } from './config/devWallet';
 import { ToastProvider } from './context/ToastContext';
 import { AuthProvider } from './context/AuthContext';
 import { MusicPlayerProvider } from './context/MusicPlayerContext';
@@ -69,6 +69,10 @@ registerMwa({
   onWalletNotFound: createDefaultWalletNotFoundHandler(),
 });
 
+// Also before React renders: WalletProvider reads the stored selection on mount,
+// so the dev wallet has to be chosen by now for autoConnect to pick it up.
+selectDevWallet();
+
 interface WalletContextProviderProps {
   children: ReactNode;
 }
@@ -80,16 +84,15 @@ function WalletContextProvider({ children }: WalletContextProviderProps) {
    * Desktop adapters only.
    * Wallet Standard + MWA wallets are injected automatically.
    */
-  const wallets = useMemo(
-    () => [
-      new PhantomWalletAdapter(),
-      new SolflareWalletAdapter(),
-    ],
-    []
-  );
+  const wallets = useMemo(() => {
+    const real = [new PhantomWalletAdapter(), new SolflareWalletAdapter()];
+    // Null unless a dev build has VITE_DEV_WALLET_KEY set — see config/devWallet.ts.
+    const dev = devWallet();
+    return dev ? [dev, ...real] : real;
+  }, []);
 
   return (
-    <ConnectionProvider endpoint={endpoint}>
+    <ConnectionProvider endpoint={endpoint} config={RPC_CONFIG}>
       <WalletProvider wallets={wallets} autoConnect={true}>
         <WalletModalProvider>
           {children}
@@ -165,11 +168,7 @@ const router = createBrowserRouter([
       { path: '/', element: <AboutPage /> },
       { path: '/about', element: <AboutPage /> },
       { path: '/roster', element: <RosterPage /> },
-      { path: '/order', element: <CommissionPage /> },
-      // The offer used to live at /commission and the page is still named for
-      // it. Kept as a redirect because this is a public marketing URL — anything
-      // already shared or indexed should land on the offer, not on nothing.
-      { path: '/commission', element: <Navigate to="/order" replace /> },
+      { path: '/commission', element: <CommissionPage /> },
       { path: '/map', element: <MapPage /> },
       { path: '/apply', element: <ApplicationForm /> },
       { path: '/artists/:id', element: <ArtistProfile /> },

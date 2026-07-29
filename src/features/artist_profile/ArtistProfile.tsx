@@ -6,14 +6,15 @@ import TagPills from '../../primitives/TagPills';
 import Img from '../../primitives/Img';
 import Discography from './Discography';
 import LiveJamCard from './LiveJamCard';
+import OwnerActions from './owner/OwnerActions';
 
 export default function ArtistProfile() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const artistId = id ?? '';
-  // `isOwner` comes from this page's own fetch, not from comparing the connected
-  // key to `owner_wallet` — the server is the one that decides, and it answers
-  // this URL differently depending on the token it was handed.
+  // `isOwner` is the server's answer for the session that asked, not a
+  // client-side comparison against `owner_wallet` — the page re-fetches on login
+  // because `useArtist` keys its cache on the session.
   const { artist, isOwner, loading } = useArtist(artistId);
   // An open jam makes the artist "live" — see useLiveJam. It loads
   // alongside the artist rather than gating the page: the profile is worth
@@ -58,17 +59,13 @@ export default function ArtistProfile() {
             <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z" />
           </svg>
         </button>
+
+        {/* Self-gating — renders nothing unless the session owns this artist. */}
+        <OwnerActions isOwner={isOwner} />
       </div>
 
       {/* Artist info — overlaps the hero image */}
       <div className="artist-hero-content flex flex-col gap-md p-lg">
-        {/* Owner's view of the same public page. There are no owner-only actions
-            on the backend yet, so this says who you are and stops there rather
-            than drawing buttons with nothing to call. */}
-        {isOwner && (
-          <span className="owner-badge">Signed in as this artist</span>
-        )}
-
         {jam && (
           <span className="live-badge">
             <span className="live-badge__dot" />

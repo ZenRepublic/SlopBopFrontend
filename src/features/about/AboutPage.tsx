@@ -48,7 +48,7 @@ export default function AboutPage() {
 
       <Flourish />
 
-      {/* Commission teaser — full detail lives on /order. A teaser, not a
+      {/* Commission teaser — full detail lives on /commission. A teaser, not a
           summary: it names the offer and the payoff, and deliberately withholds
           the mechanic (the release schedule, the voting, what the day asks of
           you). Answering all of that here is what makes a "Learn more" button
@@ -72,7 +72,7 @@ export default function AboutPage() {
           <button
             type="button"
             className="secondary"
-            onClick={() => navigate('/order')}
+            onClick={() => navigate('/commission')}
           >
             Learn more
           </button>

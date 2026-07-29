@@ -16,6 +16,9 @@ interface Props {
  * to answer — connect a wallet, or hear that this one isn't on the label. The
  * moment a signed-in wallet turns out to own exactly one artist there's nothing
  * left to ask, so it closes itself and sends you to that artist's page.
+ *
+ * `ConnectWalletButton` is the single accent action throughout; anything else
+ * the sheet offers stays quiet so the primary step is never in competition.
  */
 export function AccountSheet({ open, onClose, onGoToArtist }: Props) {
   const { publicKey } = useWallet();
@@ -48,29 +51,31 @@ export function AccountSheet({ open, onClose, onGoToArtist }: Props) {
   }, [open, soleArtist, onClose, onGoToArtist]);
 
   return (
-    <BottomSheet open={open} onClose={onClose} title="Account" fitContent>
-      <div className="flex flex-col items-center gap-lg text-center pb-xl">
+    <BottomSheet open={open} onClose={onClose} title="Login Portal" fitContent>
+      {/* Only the horizontal inset — `.bottom-sheet-content` already owns the
+          vertical padding, and doubling it left the copy stranded. */}
+      <div className="flex flex-col items-center gap-lg text-center px-md">
         {loading ? (
           <>
             <div className="spinner large processing" />
-            <p className="text-muted text-sm">
-              Check your wallet — sign the message to prove the wallet is yours.
-            </p>
+            <p>Sign the message in your wallet to prove it&apos;s yours.</p>
+            <p className="subtle text-xs">No transaction, no fee.</p>
           </>
         ) : (
           <>
-            <p className="text-sm">{copyFor({ address, isAuthed, artistCount: myArtists.length })}</p>
+            <Copy address={address} isAuthed={isAuthed} artistCount={myArtists.length} />
 
-            {error && <p className="text-sm text-accent">{error}</p>}
+            {error && <p className="text-danger">{error}</p>}
 
-            {/* More than one artist on the wallet: it can't pick for you. */}
+            {/* Several artists on one wallet — it can't pick for you. Quiet,
+                bordered rows so the accent stays with the wallet button. */}
             {isAuthed && myArtists.length > 1 && (
               <div className="w-full flex flex-col gap-sm">
                 {myArtists.map(artist => (
                   <button
                     key={artist.artist_id}
                     type="button"
-                    className="secondary w-full"
+                    className="w-full rounded-lg border border-border px-lg py-md font-display uppercase text-sm tracking-wide active:opacity-70 transition-opacity"
                     onClick={() => {
                       onClose();
                       onGoToArtist(artist.artist_id);
@@ -82,13 +87,17 @@ export function AccountSheet({ open, onClose, onGoToArtist }: Props) {
               </div>
             )}
 
+            <ConnectWalletButton />
+
             {error && address && (
-              <button type="button" className="primary" onClick={() => void login()}>
-                Try again
+              <button
+                type="button"
+                onClick={() => void login()}
+                className="text-sm text-muted underline underline-offset-4 active:opacity-70 transition-opacity"
+              >
+                Try signing again
               </button>
             )}
-
-            <ConnectWalletButton />
           </>
         )}
       </div>
@@ -96,7 +105,7 @@ export function AccountSheet({ open, onClose, onGoToArtist }: Props) {
   );
 }
 
-function copyFor({
+function Copy({
   address,
   isAuthed,
   artistCount,
@@ -105,8 +114,29 @@ function copyFor({
   isAuthed: boolean;
   artistCount: number;
 }) {
-  if (!address && !isAuthed) return 'Connect the wallet your artist is signed to.';
-  if (!isAuthed) return 'Sign the message to continue.';
-  if (artistCount === 0) return 'This wallet is not a signed artist on the SlopBop music label.';
-  return 'Pick which of your artists to open.';
+  if (isAuthed && artistCount === 0) {
+    return (
+      <>
+        <p>This wallet isn&apos;t signed to any artist on the SlopBop label.</p>
+        <p className="subtle text-xs">
+          Connect the wallet your artist was signed with to try again.
+        </p>
+      </>
+    );
+  }
+
+  if (isAuthed) {
+    return <p>You manage more than one artist. Pick one to open.</p>;
+  }
+
+  if (address) {
+    return <p>Sign the message in your wallet to finish connecting.</p>;
+  }
+
+  return (
+    <p>
+      Login with a Solana wallet to access and manage your{' '}
+      <span className="highlight">synthetic artist</span>.
+    </p>
+  );
 }

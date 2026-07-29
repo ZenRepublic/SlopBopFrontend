@@ -72,6 +72,9 @@
   color: var(--text-primary);
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  /* Centred to line up with the drag handle above it — the two read as one
+     masthead rather than a handle with a caption hanging off the left. */
+  text-align: center;
 }
 
 .bottom-sheet-content {
