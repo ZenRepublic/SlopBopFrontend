@@ -21,7 +21,10 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 const API_URL = (process.env.VITE_API_URL || 'http://localhost:5000').replace(/\/+$/, '');
 const FALLBACK_IMAGE = 'https://slopbop.com/Branding/og-banner.png';
 
-interface Album {
+// The backend has no album resource: an album is a `collections` doc with type
+// 'album', read through the generic collection endpoint like every other kind.
+// Only the public URL is album-specific.
+interface Collection {
   title?: string;
   artist_id: string;
   cover_url?: string;
@@ -61,14 +64,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   let html = shell;
   try {
-    const { album } = await fetchJson<{ album: Album }>(`${API_URL}/slopbop/albums/${id}`);
+    const { collection } = await fetchJson<{ collection: Collection }>(
+      `${API_URL}/slopbop/collections/${id}`,
+    );
     const { artist } = await fetchJson<{ artist: { name?: string } }>(
-      `${API_URL}/slopbop/artist/${album.artist_id}`,
+      `${API_URL}/slopbop/artists/${collection.artist_id}`,
     );
 
-    const title = album.title || 'Untitled Album';
+    const title = collection.title || 'Untitled Album';
     const artistName = artist.name || 'Unknown Artist';
-    const image = album.cover_url || FALLBACK_IMAGE;
+    const image = collection.cover_url || FALLBACK_IMAGE;
     const ogTitle = `${title} by ${artistName}`;
     const description = `Listen to ${artistName}'s album ${title} on SlopBop!`;
     const url = `https://${host}/albums/${id}`;

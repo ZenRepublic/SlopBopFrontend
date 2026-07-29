@@ -23,7 +23,7 @@ interface ArtistsResponse {
 }
 
 export const fetchArtist = (id: string) =>
-  apiFetch<ArtistResponse>(`/slopbop/artist/${id}`).then(r => r.artist);
+  apiFetch<ArtistResponse>(`/slopbop/artists/${id}`).then(r => r.artist);
 
 export const fetchArtists = (limit?: number) => {
   const params = limit ? `?limit=${limit}` : '';
