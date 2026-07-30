@@ -4,7 +4,7 @@ Mobile-first React web app (430px design target) — the public window into Slop
 
 ## Current focus
 
-**Group mixtape creation**, sold as **Mixtape Commissions**: a host rents a synthetic artist for a day with a group, everyone writes lyrics for a short song, the artist records them, and the songs release one-by-one on a shared mixtape page to react and vote on. The top-voted song gets a music video on our socials.
+**Group mixtape creation**, sold as **Mixtape Commissions**: a host rents a synthetic artist for a day with a group, everyone writes lyrics for a short song, the artist records them, and the songs release one-by-one on a shared mixtape page to react to and bop. The most-bopped song gets a music video on our socials.
 
 Nav is **About · Roster · Mixtape · Account**. About (`/`) states the label's thesis and teases the offer; the Mixtape page (`/commission`) carries the pitch and ends in a `mailto:` inquiry — no payment or ordering flow yet. Pricing is deliberately off the page: inbound only, quoted over email. The offer's specifics — group size, the shape of a day, the prize — live in `features/commission/`, not here.
 

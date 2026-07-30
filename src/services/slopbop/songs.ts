@@ -1,11 +1,5 @@
 import { apiFetch } from './client';
 
-export interface SongStats {
-  bops: number;
-  slops: number;
-  total_votes: number;
-}
-
 export interface Song {
   _id: string;
   artist_id: string;
@@ -36,7 +30,10 @@ export interface Song {
   // Also the catalogue sort key. No longer tied to sim time in any way.
   release_date?: string;
   created_at?: string;
-  stats?: SongStats;
+  // How many bops the song has. One-sided by design: there is no counter-vote,
+  // so this is both the like count and the only ranking key. Absent on older
+  // songs — read it as 0.
+  bops?: number;
 }
 
 // Whether a song has dropped, per the backend's authoritative `released` flag.
@@ -46,8 +43,6 @@ export interface Song {
 export function isReleased(song: Song): boolean {
   return song.released !== false;
 }
-
-export type VoteType = 'bop' | 'slop';
 
 interface SongsResponse {
   success: boolean;
@@ -59,9 +54,9 @@ interface SongResponse {
   song: Song;
 }
 
-interface VoteResponse {
+interface BopResponse {
   success: boolean;
-  stats: SongStats;
+  bops: number;
 }
 
 export const fetchSongs = (artistId: string) =>
@@ -72,8 +67,10 @@ export const fetchSongs = (artistId: string) =>
 export const fetchSong = (songId: string) =>
   apiFetch<SongResponse>(`/slopbop/songs/${songId}`).then(r => r.song);
 
-export const voteSong = (songId: string, type: VoteType) =>
-  apiFetch<VoteResponse>(`/slopbop/songs/${songId}/vote`, {
+// Bop a song — a like, with no counter-vote and no body. Not idempotent and not
+// authenticated: the server counts every call, so the caller is responsible for
+// only sending one per song (see `useSongBop`). Returns the fresh count.
+export const bopSong = (songId: string) =>
+  apiFetch<BopResponse>(`/slopbop/songs/${songId}/bop`, {
     method: 'PATCH',
-    body: JSON.stringify({ type }),
-  }).then(r => r.stats);
+  }).then(r => r.bops);

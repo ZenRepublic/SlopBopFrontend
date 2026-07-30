@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useMusicPlayer } from '../context/MusicPlayerContext';
-import { useSongVote } from '../hooks/useSongVote';
-import { ratingEmoji } from './songlist/ratingEmoji';
+import { useSongBop } from '../hooks/useSongBop';
 import Img from '../primitives/Img';
 
 function formatTime(seconds: number): string {
@@ -307,56 +306,38 @@ export default function MusicPlayer() {
   );
 }
 
-// The slop/bop vote strip shown inside the expanded player.
+// The bop strip shown inside the expanded player. One-sided on purpose: slop is
+// every song's default state, not a thing you pick — the only move is bopping
+// one out of it. So this is an action, not a question, and there's nothing to
+// press once you've made it.
 function BopMeter() {
   const { track } = useMusicPlayer();
-  const { stats, userVote, voting, vote } = useSongVote(track?.id, track?.stats);
+  const { bops, bopped, bopping, bop } = useSongBop(track?.id, track?.bops);
 
-  if (!stats) return null;
-
-  const bopPercent = stats.total_votes > 0
-    ? Math.round((stats.bops / stats.total_votes) * 100)
-    : 0;
+  if (!track) return null;
 
   return (
     <div className="bop-meter-strip relative overflow-hidden py-xl my-md">
       <div className="bop-meter-bg absolute inset-0 -z-10" />
 
       <div className="flex flex-col items-center gap-sm px-xl relative">
-        <p className="font-display text-xl">
-          {bopPercent}% {ratingEmoji(bopPercent)} <span className="opacity-50">|</span> <span className="text-base">{stats.total_votes} votes</span>
+        {/* No unit — the button underneath says what's being counted. */}
+        <p className="font-display text-3xl">
+          {bops} 🤩
         </p>
 
-        <div className="flex gap-md w-full max-w-player">
-          <button
-            type="button"
-            disabled={!!userVote || voting}
-            onClick={() => vote('slop')}
-            className={`flex-1 py-sm rounded-lg font-bold text-sm transition-base cursor-pointer
-              ${userVote === 'slop'
-                ? 'bg-danger text-black'
-                : userVote
-                  ? 'bg-surface text-muted cursor-not-allowed'
-                  : 'bg-danger text-black active:scale-95'
-              }`}
-          >
-            SLOP 🤮
-          </button>
-          <button
-            type="button"
-            disabled={!!userVote || voting}
-            onClick={() => vote('bop')}
-            className={`flex-1 py-sm rounded-lg font-bold text-sm transition-base cursor-pointer
-              ${userVote === 'bop'
-                ? 'bg-accent text-black'
-                : userVote
-                  ? 'bg-surface text-muted cursor-not-allowed'
-                  : 'bg-accent text-black active:scale-95'
-              }`}
-          >
-            BOP 🤩
-          </button>
-        </div>
+        <button
+          type="button"
+          disabled={bopped || bopping}
+          onClick={bop}
+          className={`w-full max-w-player py-sm rounded-lg font-bold text-sm transition-base
+            ${bopped
+              ? 'bg-surface text-muted cursor-not-allowed'
+              : 'bg-accent text-black cursor-pointer active:scale-95'
+            }`}
+        >
+          {bopped ? 'BOPPED' : "THAT'S A BOP!"}
+        </button>
       </div>
     </div>
   );

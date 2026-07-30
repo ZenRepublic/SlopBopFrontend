@@ -17,7 +17,7 @@ below points at those through semantic roles — reach for the role, never a raw
 - **Navy & Cobalt** — the room. Navy is the background (a slow diagonal two-tone);
   cobalt is every raised surface: cards, panels, chips.
 - **Lime** (`accent`) — the spotlight. The colour that says *look here*: section
-  kickers, the now-playing track, the BOP vote. Keep it scarce enough that it
+  kickers, the now-playing track, the BOP button. Keep it scarce enough that it
   always means something.
 - **Lime-2** (`accent-dim`) — lime's quieter cousin, for emphasis *inside* a
   sentence. A highlighted word or two, never a whole line.
@@ -26,8 +26,8 @@ below points at those through semantic roles — reach for the role, never a raw
   is the point, so don't spend it elsewhere.
 - **Steel** (`muted`) — the whisper. Secondary text, captions, and *off* states
   (an inactive tab, a disabled button).
-- **Coral & Amber** — meaning, not decoration. Coral is error and the SLOP vote;
-  amber is a warning. If it isn't one of those, it isn't this colour.
+- **Coral & Amber** — meaning, not decoration. Coral is error; amber is a
+  warning. If it isn't one of those, it isn't this colour.
 - **Facet colours** (`--facet-*`) — the four elements an artist is built from
   (personality, appearance, voice, taste). A pop of range, kept to the Roster.
 

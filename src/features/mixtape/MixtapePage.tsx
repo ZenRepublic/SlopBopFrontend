@@ -102,7 +102,7 @@ export default function MixtapePage() {
             duration: song.duration,
             lyrics: song.lyrics,
             author: song.author,
-            stats: song.stats,
+            bops: song.bops,
             artistId: song.artist_id,
             artistName: artist?.name,
           })}

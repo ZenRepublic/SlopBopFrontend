@@ -68,18 +68,18 @@ export default function CommissionPage() {
 
       {/* The prize — the page's crescendo, and the only part of the day that
           leaves the room. Placed last before the FAQ so the pitch escalates
-          into it, and it does double duty: it's the stakes that make a Slop or
-          Bop vote worth arguing about, and it's the reach that justifies the
-          spend to a community's marketing budget. The video is the proof. */}
+          into it, and it does double duty: it's the stakes that make a bop
+          worth arguing about, and it's the reach that justifies the spend to a
+          community's marketing budget. The video is the proof. */}
       <section className="flex flex-col gap-lg px-md">
         <div className="flex flex-col gap-md">
           <h2 className="font-display text-lg">The Prize</h2>
           <p className="text-base leading-relaxed">
-            Make sure to vote on your favorite songs, because the most popular one will
+            Make sure to bop your favorite songs, because the most bopped one will
             <span className="highlight"> go public</span>.
           </p>
           <p className="text-base leading-relaxed">
-            24 hours after the mixtape is completed, the song with the highest score will upgrade into
+            24 hours after the mixtape is completed, the song with the most bops will upgrade into
             a music video and be posted on our social channels for a chance to go viral!
           </p>
         </div>

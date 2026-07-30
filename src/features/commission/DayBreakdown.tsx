@@ -20,8 +20,8 @@ const FLOW: { title: string; body: string }[] = [
     body: 'The songs release over the day on a schedule with a live countdown, building anticipation among the participants',
   },
   {
-    title: 'Vote',
-    body: 'When a song drops, listen to it and vote whether its SLOP or BOP to see who made the best banger of the day!',
+    title: 'Bop',
+    body: 'When a song drops, listen to it and bop the ones you like — the most bopped song is the best banger of the day!',
   },
 ];
 

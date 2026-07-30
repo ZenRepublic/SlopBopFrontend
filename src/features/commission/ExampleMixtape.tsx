@@ -30,16 +30,12 @@ export function ExampleMixtape() {
   // The pitch stands on its own — a broken card is worse than no card.
   if (!mixtape) return null;
 
-  // Best-first, by SongList's 'popular' score (bops net of slops) — a showcase
-  // should lead with what the group actually voted up, not whatever landed
-  // first. Unreleased songs ship with no audio at all, so they can't be queued.
+  // Best-first, by SongList's 'bops ↑' order — a showcase should
+  // lead with what the group actually bopped, not whatever landed first.
+  // Unreleased songs ship with no audio at all, so they can't be queued.
   const playable = songs
     .filter(song => isReleased(song) && song.audio_url)
-    .sort((a, b) => {
-      const scoreA = (a.stats?.bops ?? 0) - (a.stats?.slops ?? 0);
-      const scoreB = (b.stats?.bops ?? 0) - (b.stats?.slops ?? 0);
-      return scoreB - scoreA;
-    });
+    .sort((a, b) => (b.bops ?? 0) - (a.bops ?? 0));
 
   const toTrack = (song: Song): Track => ({
     id: song._id,
@@ -49,7 +45,7 @@ export function ExampleMixtape() {
     duration: song.duration,
     lyrics: song.lyrics,
     author: song.author,
-    stats: song.stats,
+    bops: song.bops,
     artistId: mixtape.artist_id,
     artistName: artist?.name,
   });
@@ -88,7 +84,7 @@ export function ExampleMixtape() {
                 coverUrl={song.cover_url}
                 title={song.title || 'Untitled'}
                 duration={song.duration}
-                stats={song.stats}
+                bops={song.bops}
                 active={track?.id === song._id}
                 onClick={() => playQueue(queue, i)}
               />

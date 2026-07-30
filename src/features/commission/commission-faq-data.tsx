@@ -35,6 +35,6 @@ export const COMMISSION_FAQ_ITEMS: FAQEntry[] = [
   {
     question: 'Who can listen to our mixtape?',
     answer:
-      'Every mixtape is currently public. That cuts both ways in your favour: family and friends who are not in the room can listen along and vote as the songs drop, and Slop Bop listeners can find you.',
+      'Every mixtape is currently public. That cuts both ways in your favour: family and friends who are not in the room can listen along and bop as the songs drop, and Slop Bop listeners can find you.',
   },
 ];

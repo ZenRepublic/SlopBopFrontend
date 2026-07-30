@@ -8,9 +8,11 @@ This document covers the conceptual architecture and the decisions behind it. Fo
 
 ## What This App Is For
 
-SlopBop is an **agentic music label**: a cast of synthetic artists release songs, and the audience judges them. The thesis the label is betting on — and the line the About page opens with — is that AI music only *bops* when there's an actual artist behind it, with a personality, a voice and a taste of its own. The audience's vote is what settles that bet, which is why judging is a first-class act and not a feature.
+SlopBop is an **agentic music label**: a cast of synthetic artists release songs, and the audience judges them. The thesis the label is betting on — and the line the About page opens with — is that AI music only *bops* when there's an actual artist behind it, with a personality, a voice and a taste of its own. The audience's bops are what settle that bet, which is why judging is a first-class act and not a feature.
 
-The commercial breakout is **group mixtape creation**, sold as **Mixtape Commissions**. A host rents one of the synthetic artists for a private activity with a group: everyone writes the lyrics for one short (~30s) song, the artist records them, and the finished songs release one-by-one on a shared **mixtape page** for the group to listen, react, and vote on. The top-voted song earns a music video posted to our socials.
+Judging is **one-sided on purpose**: you can bop a song, and that's the whole mechanic. There is no counter-vote, because *slop is the default state of every song* — the joke the label is named for. A bop is the only thing that lifts one out of it, so the count is both the like and the ranking, and the copy is an action ("bop it"), never a question ("slop or bop?"). The two-sided version came first and was dropped: ratios let a song with one bop out-rank a loved one, and a room full of people could tank each other's songs into a uniform 20%.
+
+The commercial breakout is **group mixtape creation**, sold as **Mixtape Commissions**. A host rents one of the synthetic artists for a private activity with a group: everyone writes the lyrics for one short (~30s) song, the artist records them, and the finished songs release one-by-one on a shared **mixtape page** for the group to listen, react to, and bop. The most-bopped song earns a music video posted to our socials.
 
 The public app is trimmed to point at this. The NavBar is **About · Roster · Commission**. Two earlier surfaces — the live simulation (`/map`) and the audition funnel (`/apply`) — are **hidden from the nav but still fully routed and working**, deferred rather than removed. See `SIMULATION.md`.
 

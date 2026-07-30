@@ -1,17 +1,11 @@
 import Img from '../../primitives/Img';
-import { ratingEmoji } from './ratingEmoji';
-
-interface SongStats {
-  bops: number;
-  slops: number;
-  total_votes: number;
-}
 
 interface Props {
   coverUrl?: string;
   title: string;
   duration?: number;
-  stats?: SongStats;
+  /** Bop count. Absent or 0 shows nothing — an unbopped song is just a song. */
+  bops?: number;
   onClick: () => void;
   /** Highlight this row as the track currently playing. */
   active?: boolean;
@@ -23,12 +17,7 @@ function formatDuration(seconds: number): string {
   return `${mins}:${secs.toString().padStart(2, '0')}`;
 }
 
-export default function SingleCard({ coverUrl, title, duration, stats, onClick, active }: Props) {
-  const approval =
-    stats && stats.total_votes > 0
-      ? Math.round((stats.bops / stats.total_votes) * 100)
-      : null;
-
+export default function SingleCard({ coverUrl, title, duration, bops, onClick, active }: Props) {
   return (
     <button
       type="button"
@@ -42,8 +31,8 @@ export default function SingleCard({ coverUrl, title, duration, stats, onClick, 
       />
       <div className="flex flex-col flex-1 min-w-0">
         <p className={`text-sm truncate ${active ? 'text-accent font-medium' : ''}`}>{title}</p>
-        {approval !== null && (
-          <span className="text-xs subtle">{approval}% {ratingEmoji(approval)}</span>
+        {!!bops && (
+          <span className="text-xs subtle">🤩 {bops}</span>
         )}
       </div>
       {duration != null && (

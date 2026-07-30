@@ -26,12 +26,11 @@ export default function AboutPage() {
 
         {/* The thesis, stated as a bet — confident about the wager, silent on
             the outcome. Declaring that our music bops would answer the exact
-            question the line above hands to the reader, and a vote whose result
-            the label already announced isn't worth casting. */}
+            question the line above hands to the reader, and a verdict the label
+            already announced isn't worth handing out. */}
         <p className="text-base leading-relaxed">
           Anyone can prompt a song. We're betting it can only <span className="highlight">bop</span>{' '}
-          when there's an artist behind it, with its own personality, voice and taste. Your vote
-          settles it.
+          when there's an artist behind it, with its own personality, voice and taste.
         </p>
 
         {/* Socials, lifted up right under the introduction */}

@@ -1,10 +1,6 @@
 import { useMemo } from 'react';
 import { useSongs } from './useSongs';
-import { isReleased, Song } from '../services/slopbop';
-
-function netScore(song: Song): number {
-  return (song.stats?.bops ?? 0) - (song.stats?.slops ?? 0);
-}
+import { isReleased } from '../services/slopbop';
 
 export function useTopSong(artistId: string) {
   const { songs, loading } = useSongs(artistId);
@@ -14,7 +10,7 @@ export function useTopSong(artistId: string) {
     const playable = songs.filter(s => s.audio_url && isReleased(s));
 
     if (!playable.length) return null;
-    return playable.reduce((best, s) => netScore(s) >= netScore(best) ? s : best);
+    return playable.reduce((best, s) => (s.bops ?? 0) >= (best.bops ?? 0) ? s : best);
   }, [songs]);
 
   return { topSong, loading };

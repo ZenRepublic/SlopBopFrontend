@@ -30,13 +30,13 @@ export function ArtistCard({ artist }: { artist: Artist }) {
 
       {topSong && (
         <div className="px-lg pb-lg pt-sm bg-surface flex flex-col gap-xs">
-          <p className="eyebrow">Top Rated Song</p>
+          <p className="eyebrow">Biggest Bop</p>
           <div className="bg-surface-2 rounded-lg p-sm">
             <SingleCard
               coverUrl={topSong.cover_url}
               title={topSong.title || 'Untitled'}
               duration={topSong.duration}
-              stats={topSong.stats}
+              bops={topSong.bops}
               onClick={() => play({
                 id: topSong._id,
                 title: topSong.title || 'Untitled',
@@ -45,7 +45,7 @@ export function ArtistCard({ artist }: { artist: Artist }) {
                 duration: topSong.duration,
                 lyrics: topSong.lyrics,
                 author: topSong.author,
-                stats: topSong.stats,
+                bops: topSong.bops,
                 artistId: artist.artist_id,
                 artistName: artist.name,
               })}

@@ -4,7 +4,18 @@ import { useMusicPlayer, type Track } from '../../context/MusicPlayerContext';
 import SingleCard from './SingleCard';
 import ProcessingCard from './ProcessingCard';
 
-type SongSort = 'release' | 'popular';
+type SongSort = 'release' | 'bops-desc' | 'bops-asc';
+
+// The sort toggle's segments, in display order. Labelled here rather than
+// derived from the key, because the arrow is the label — and it points at where
+// the *big* numbers go, not at the sort direction: ↑ puts the most-bopped song
+// on top, ↓ puts the least-bopped one there (the bottom of the mixtape, which
+// is its own kind of fun).
+const SORTS: { key: SongSort; label: string }[] = [
+  { key: 'release', label: 'Release' },
+  { key: 'bops-desc', label: 'Bops ↑' },
+  { key: 'bops-asc', label: 'Bops ↓' },
+];
 
 // Stable fallback when no re-fetch is wired in — keeps the countdown card's
 // poll effect from re-subscribing every render.
@@ -26,9 +37,10 @@ interface Props {
 }
 
 /**
- * The canonical way to render a list of songs: a release/popular sort toggle and a
- * play-all button over a card per song. Shared by the artist's Singles section
- * and the mixtape tracklist so the two stay identical.
+ * The canonical way to render a list of songs: a three-way sort toggle (release
+ * order, most-bopped first, least-bopped first) and a play-all button over a
+ * card per song. Shared by the artist's Singles section and the mixtape
+ * tracklist so the two stay identical.
  *
  * Playback is what-you-see-is-what-plays: hitting play-all, or tapping a song,
  * snapshots the list in its *current* displayed order into the player's queue
@@ -51,19 +63,19 @@ export default function SongList({ songs, toTrack, header, onRefetch }: Props) {
     .filter(s => !isReleased(s))
     .sort((a, b) => (a.release_date || '').localeCompare(b.release_date || ''))[0];
 
-  const sorted = sort === 'popular'
-    ? [...released].sort((a, b) => {
-        const scoreA = (a.stats?.bops ?? 0) - (a.stats?.slops ?? 0);
-        const scoreB = (b.stats?.bops ?? 0) - (b.stats?.slops ?? 0);
-        return scoreB - scoreA;
-      })
-    : [...released].sort((a, b) => {
-        // Release order: oldest first (id 1 first). Fall back to created_at so
-        // undated songs stay put rather than jumping around.
-        const ka = a.release_date || a.created_at || '';
-        const kb = b.release_date || b.created_at || '';
-        return ka.localeCompare(kb);
-      });
+  const sorted = [...released].sort((a, b) => {
+    if (sort === 'release') {
+      // Release order: oldest first (id 1 first). Fall back to created_at so
+      // undated songs stay put rather than jumping around.
+      const ka = a.release_date || a.created_at || '';
+      const kb = b.release_date || b.created_at || '';
+      return ka.localeCompare(kb);
+    }
+    // Bops, and nothing else — the count *is* the ranking. Direction is the
+    // only thing separating the two bop modes.
+    const diff = (a.bops ?? 0) - (b.bops ?? 0);
+    return sort === 'bops-desc' ? -diff : diff;
+  });
 
   // Snapshot in the exact order shown, so tap index == queue index.
   const tracks = sorted.map(toTrack);
@@ -84,16 +96,16 @@ export default function SongList({ songs, toTrack, header, onRefetch }: Props) {
         <div className="flex items-center gap-md min-w-0">
           {header}
           <div className="flex rounded-md overflow-hidden border border-border text-xs flex-shrink-0">
-            {(['release', 'popular'] as SongSort[]).map(mode => (
+            {SORTS.map(({ key, label }) => (
               <button
-                key={mode}
+                key={key}
                 type="button"
-                onClick={() => setSort(mode)}
-                className={`px-sm py-xs capitalize transition-base ${
-                  sort === mode ? 'bg-surface text-primary' : 'text-muted'
+                onClick={() => setSort(key)}
+                className={`px-sm py-xs whitespace-nowrap transition-base ${
+                  sort === key ? 'bg-surface text-primary' : 'text-muted'
                 }`}
               >
-                {mode}
+                {label}
               </button>
             ))}
           </div>
@@ -126,7 +138,7 @@ export default function SongList({ songs, toTrack, header, onRefetch }: Props) {
                 coverUrl={song.cover_url}
                 title={song.title || 'Untitled'}
                 duration={song.duration}
-                stats={song.stats}
+                bops={song.bops}
                 active={track?.id === song._id}
                 // Resume rather than reload — on a slow connection an impatient
                 // second tap would otherwise restart the fetch and starve playback.

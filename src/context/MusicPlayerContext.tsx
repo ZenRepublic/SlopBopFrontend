@@ -9,12 +9,6 @@ import {
 } from 'react';
 import { useToast } from './ToastContext';
 
-export interface TrackStats {
-  bops: number;
-  slops: number;
-  total_votes: number;
-}
-
 export interface Track {
   id: string;
   title: string;
@@ -23,7 +17,8 @@ export interface Track {
   duration?: number;
   lyrics?: string;
   author?: string;
-  stats?: TrackStats;
+  /** Seeds the player's bop count — see `useSongBop`. Absent reads as 0. */
+  bops?: number;
   artistId?: string;
   artistName?: string;
 }
