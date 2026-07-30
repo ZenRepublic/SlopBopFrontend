@@ -9,6 +9,9 @@ const TOKEN_KEY = 'slopbop.auth';
 interface StoredSession {
   wallet: string;
   token: string;
+  /** Epoch ms the JWT stops being accepted. Absent on sessions stored before
+   *  expiry was tracked — those stay usable and end at their first 401. */
+  expiresAt?: number;
 }
 
 // The JWT names the wallet it was issued to, so a token is only meaningful next
@@ -22,20 +25,42 @@ function readSession(): StoredSession | null {
     const raw = localStorage.getItem(TOKEN_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as Partial<StoredSession>;
-    return parsed.wallet && parsed.token ? { wallet: parsed.wallet, token: parsed.token } : null;
+    if (!parsed.wallet || !parsed.token) return null;
+    return { wallet: parsed.wallet, token: parsed.token, expiresAt: parsed.expiresAt };
   } catch {
     // Unparseable, or storage is blocked (Safari private mode). Either way: no session.
     return null;
   }
 }
 
-export const getToken = () => session?.token ?? null;
+// The server is still the authority — this only saves a round trip we already
+// know the answer to, and stops the app spending a week acting signed-in on a
+// token that stopped working. A clock that's wrong the other way just means the
+// 401 arrives as usual.
+function expired(s: StoredSession): boolean {
+  return s.expiresAt != null && Date.now() >= s.expiresAt;
+}
+
+/** The bearer token, or null when there's no live session. Drops a token whose
+ *  week ran out rather than sending it. */
+export function getToken(): string | null {
+  if (session && expired(session)) clearToken();
+  return session?.token ?? null;
+}
 
 /** The wallet the stored token was issued to, or null when signed out. */
-export const getTokenWallet = () => session?.wallet ?? null;
+export function getTokenWallet(): string | null {
+  if (session && expired(session)) clearToken();
+  return session?.wallet ?? null;
+}
 
-export function setToken(wallet: string, token: string) {
-  session = { wallet, token };
+/** `expiresIn` is the `expires_in` from /auth/verify, in seconds. */
+export function setToken(wallet: string, token: string, expiresIn?: number) {
+  session = {
+    wallet,
+    token,
+    expiresAt: expiresIn ? Date.now() + expiresIn * 1000 : undefined,
+  };
   try {
     localStorage.setItem(TOKEN_KEY, JSON.stringify(session));
   } catch {

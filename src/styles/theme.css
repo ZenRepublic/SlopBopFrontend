@@ -136,6 +136,9 @@
   --z-modal-backdrop: 500;
   --z-modal: 1000;
   --z-tooltip: 1100;
+  /* Above everything it's covering — including a modal — but under the toast
+     that reports how the locked action turned out. */
+  --z-lock: 1150;
   --z-notification: 1200;
 
   /* Font Weights */

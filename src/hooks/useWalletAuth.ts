@@ -114,8 +114,13 @@ export function useWalletAuth(): WalletAuth {
       // string-compares it, so any re-encoding or trim fails the check.
       const signature = bs58.encode(await signMessage(new TextEncoder().encode(message)));
 
-      const { token } = await verifyWallet({ walletAddress, challengeId, message, signature });
-      setToken(walletAddress, token);
+      const { token, expires_in } = await verifyWallet({
+        walletAddress,
+        challengeId,
+        message,
+        signature,
+      });
+      setToken(walletAddress, token, expires_in);
       setWallet(walletAddress);
 
       const me = await fetchMe();

@@ -30,7 +30,10 @@ export default {
         'accent': 'var(--accent)',         // Lime Green — primary accent
         'accent-2': 'var(--accent-dim)',   // Yellow Green — secondary accent / hover
 
-        // Text
+        // Text. These are TEXT tokens — `bg-muted` or `bg-primary` would paint a
+        // background in a text colour, which is never what you want; backgrounds
+        // are `surface`/`surface-2`/`input` below.
+        'primary': 'var(--text-primary)',  // Alabaster Grey — body text
         'muted': 'var(--text-muted)',      // Cool Steel — secondary text
         'soft': 'var(--text-soft)',        // Tea Green — decorative text
         'alt': 'var(--text-alt)',          // Deep Navy — text on accent backgrounds

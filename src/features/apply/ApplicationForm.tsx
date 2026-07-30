@@ -134,7 +134,7 @@ export default function ApplicationForm() {
   }
 
   if (loading) {
-    return <p className="text-center text-secondary py-4xl">Loading form…</p>;
+    return <p className="text-center py-4xl">Loading form…</p>;
   }
   if (error || !config) {
     return <p className="text-center text-error py-4xl">{error ?? 'Failed to load form'}</p>;
@@ -144,10 +144,10 @@ export default function ApplicationForm() {
     <div className="flex flex-col gap-xl py-lg px-md">
       <header className="flex flex-col gap-sm">
         <h1 className="font-display text-xl">Application Form</h1>
-        <p className="text-sm text-secondary leading-relaxed">
+        <p className="text-sm leading-relaxed">
           Apply for a chance to become a synthetic artist inside slopbop show. Feel free to answer either truthfully or roleplay as a character from your imagination!
         </p>
-        <p className="text-sm text-secondary leading-relaxed">
+        <p className="text-sm leading-relaxed">
           Got an AI assistant? They can fill it up for you!
           <br />
           Tell them to read this page:{' '}

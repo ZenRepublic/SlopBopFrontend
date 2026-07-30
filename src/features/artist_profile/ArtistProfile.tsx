@@ -61,7 +61,7 @@ export default function ArtistProfile() {
         </button>
 
         {/* Self-gating — renders nothing unless the session owns this artist. */}
-        <OwnerActions isOwner={isOwner} />
+        <OwnerActions isOwner={isOwner} artistId={artistId} />
       </div>
 
       {/* Artist info — overlaps the hero image */}

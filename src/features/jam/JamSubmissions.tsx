@@ -1,41 +1,47 @@
 import type { RequestStatus } from '../../services/slopbop';
 import SongWriter from '../../components/songwriter/SongWriter';
+import DeadlineStrip from '../../components/DeadlineStrip';
 
 interface Props {
   jamId: string;
   artistName?: string;
   status: RequestStatus;
-  /** Refetch the jam so the window is re-evaluated (a 409 closes it, or the
-   * final slot fills). */
+  /** Refetch the jam so the window is re-evaluated (the deadline hits, a 409
+   * closes it, or the final slot fills). */
   refresh: () => void;
 }
 
-// Song submissions for a jam — the free, always-open counterpart to the
-// mixtape's staged Submissions. There's no window or deadline: intake stays open
-// until capacity, and songs land one at a time as they're produced (so this sits
-// *below* the song list rather than replacing it). Its states:
+// Song submissions for a jam — the mixtape's louder sibling. A jam closes on
+// whichever comes first, filling up or running out of days, so it shows both the
+// capacity gauge (inside the form card) and the deadline strip. Its states:
 //
-//   open (count < max) → intro + the generic form card
-//   full  → a "tape is full" notice
-//   otherwise          → nothing (e.g. not yet configured with max_tracks)
+//   open             → the pitch, the countdown, and the form card
+//   full             → a "tape is full" notice
+//   deadline_passed  → submissions are over; the artist is choosing
+//   otherwise        → nothing (e.g. never configured with max_tracks)
 //
 // Owns its own top divider so hiding it also removes the divider.
 export default function JamSubmissions({ jamId, artistName, status, refresh }: Props) {
+  const artist = artistName ?? 'this artist';
+
   let body: React.ReactNode = null;
   if (status.open) {
-    // Intro copy sits above the generic form card (which carries the count
-    // header). No deadline strip — a jam has no window, just capacity. And
-    // no oncePerDevice: submit as many songs as there are slots left.
+    // The pitch sits above the generic form card (which carries the count
+    // header). No oncePerDevice: submit as many songs as there are slots left.
     body = (
       <div className="flex flex-col gap-md">
-        <p className="text-sm text-secondary leading-relaxed">
-          Help {artistName ?? 'this artist'} create their next viral song!
+        <p className="text-sm leading-relaxed">
+          This week we have {artist} on the mic, jamming on the{' '}
+          <span className="text-accent">songs that you write</span>.
         </p>
-        <p className="text-sm text-secondary leading-relaxed">
-          Write down the lyrics and a song will show up as soon as they produce
-          it. The most popular song in the jam will become a fresh Single,
-          while the rest will perish…
+        <p className="text-sm leading-relaxed">
+          At the end of the jam one song gets upgraded into a proper Single, while
+          the rest will perish…
         </p>
+
+        {status.submission_deadline && (
+          <DeadlineStrip deadline={status.submission_deadline} onExpire={refresh} />
+        )}
 
         <SongWriter
           collectionId={jamId}
@@ -51,6 +57,17 @@ export default function JamSubmissions({ jamId, artistName, status, refresh }: P
         <span className="text-2xl">🎤</span>
         <p className="text-sm font-semibold text-accent">This jam is full!</p>
         <p className="text-xs text-muted">All {status.max_tracks} slots have been taken.</p>
+      </div>
+    );
+  } else if (status.reason === 'deadline_passed') {
+    // The jam ran its days out. Which of the two post-deadline phases it's in —
+    // the artist still choosing, or a winner already crowned — is `jam_status`'s
+    // answer, not this component's; it only explains why the form is gone.
+    body = (
+      <div className="frosted-card flex flex-col items-center gap-xs text-center py-sm">
+        <span className="text-2xl">🏆</span>
+        <p className="text-sm font-semibold text-accent">The jam is over!</p>
+        <p className="text-xs text-muted">{artist} is picking the song that survives.</p>
       </div>
     );
   }

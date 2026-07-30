@@ -54,6 +54,11 @@ interface SongsResponse {
   songs: Song[];
 }
 
+interface SongResponse {
+  success: boolean;
+  song: Song;
+}
+
 interface VoteResponse {
   success: boolean;
   stats: SongStats;
@@ -61,6 +66,11 @@ interface VoteResponse {
 
 export const fetchSongs = (artistId: string) =>
   apiFetch<SongsResponse>(`/slopbop/songs?artist_id=${artistId}`).then(r => r.songs);
+
+// One song by id. The read for a song you know the id of but can't reach through
+// a list — a resolved jam's winner, which has left the collection that named it.
+export const fetchSong = (songId: string) =>
+  apiFetch<SongResponse>(`/slopbop/songs/${songId}`).then(r => r.song);
 
 export const voteSong = (songId: string, type: VoteType) =>
   apiFetch<VoteResponse>(`/slopbop/songs/${songId}/vote`, {

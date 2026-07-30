@@ -1,6 +1,7 @@
 import { apiFetch } from './client';
 import { Song } from './songs';
 import type { RequestClosedReason } from './requests';
+import type { JamStatus } from './jams';
 
 // How a collection resolves its songs and which extra fields it carries. All
 // three resolve their songs by collection_id back-reference and carry the same
@@ -10,9 +11,12 @@ import type { RequestClosedReason } from './requests';
 //            no `request_status`. The permanent catalogue (see Discography).
 //   mixtape  crowdsourced against a submission window and released as a batch —
 //            what a Mixtape Commission produces.
-//   jam      crowdsourced with no window, open until capacity, each song
-//            published as it's produced. A live session: it exists only while
-//            it's running and is deleted when the artist picks the winner.
+//   jam      crowdsourced, each song published as it's produced. A 7-day timed
+//            event: 6 days of submissions (capped by capacity too), then 24
+//            hours for the artist to pick the one song that becomes a single —
+//            the rest are deleted. See `JamStatus` for the phases. The jam doc
+//            itself survives its own resolution, since numbering the next one
+//            counts the ones that came before.
 //
 // The union is also the seam for future kinds (e.g. a `playlist` that resolves
 // an explicit song_id list instead).
@@ -32,27 +36,36 @@ export interface Collection {
   // artist who writes nothing still has a call to action.
   cta?: string;
   // Submission fields, authored on the crowdsourced kinds and returned by the
-  // list read. A mixtape uses the full window (start → deadline); a jam has no
-  // window, only capacity, so it carries just the count and max; an album has
+  // list read. A mixtape uses the full window (start → deadline); a jam has a
+  // deadline but no start (6 days out, stamped at creation — so it closes on
+  // whichever comes first, filling up or running out of time); an album has
   // neither. Prefer the evaluated `RequestStatus` off collection detail where you
   // have it — these are the raw source, and the only thing available from a list.
-  submission_start?: string;    // ISO or absent
-  submission_deadline?: string; // ISO or absent
+  submission_start?: string;    // ISO or absent (always absent on a jam)
+  submission_deadline?: string; // ISO or absent (absent only on a pre-clock jam)
   submission_count?: number;    // seeds submitted so far
   max_tracks?: number;
+  // The jam's winner, once it has one — the field whose presence *is* the
+  // `resolved` phase. Jam-only, and the one piece of `JamStatus` the list read
+  // carries, which is how a list can tell a live jam from an archived one
+  // without a detail fetch per jam (see `useLiveJam`).
+  selected_song_id?: string;
 }
 
 // Whether a crowdsourced collection (mixtape or jam) is currently accepting song
 // submissions, evaluated server-side on collection detail read. `open` gates the
 // submission form; when closed, `reason` says why. The window runs from
-// `submission_start` to `submission_deadline` (both null on a jam, which is
-// capacity-bound only). `track_count` is the count of submissions received (the
-// capacity gauge is track_count / max_tracks).
+// `submission_start` to `submission_deadline`; a jam has only the deadline, so
+// its `submission_start` is null but its `submission_deadline` is real — a jam
+// closes on capacity OR time, whichever comes first. `track_count` is the count
+// of submissions received (the capacity gauge is track_count / max_tracks).
 export interface RequestStatus {
   open: boolean;
   reason: RequestClosedReason | null;
   track_count: number;
-  max_tracks: number;
+  // Null when the collection was never given a capacity — the `not_configured`
+  // case, where `open` is false and there is no gauge to render.
+  max_tracks: number | null;
   submission_start: string | null;
   submission_deadline: string | null;
 }
@@ -65,9 +78,15 @@ interface CollectionsResponse {
 interface CollectionResponse {
   success: boolean;
   collection: Collection;
+  // A resolved jam returns `[]`: the winner was lifted out of the collection and
+  // the also-rans deleted, so there is nothing left to list. Fetch the winner by
+  // `jam_status.selected_song_id`.
   songs: Song[];
   // Present only on the crowdsourced types (mixtape, jam); an album omits it.
   request_status?: RequestStatus;
+  // Jam-only. Stacks on top of `request_status` rather than replacing it — the
+  // two answer different questions, and only `request_status` gates the form.
+  jam_status?: JamStatus;
 }
 
 // List an artist's collections, optionally filtered by kind (e.g. `'jam'`).
@@ -82,4 +101,5 @@ export const fetchCollection = (id: string) =>
     collection: r.collection,
     songs: r.songs,
     requestStatus: r.request_status ?? null,
+    jamStatus: r.jam_status ?? null,
   }));

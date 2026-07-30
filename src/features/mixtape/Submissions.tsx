@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
 import type { RequestStatus } from '../../services/slopbop';
 import SongWriter from '../../components/songwriter/SongWriter';
+import DeadlineStrip from '../../components/DeadlineStrip';
+import { Countdown } from '../../primitives/Countdown';
 
 interface Props {
   mixtapeId: string;
@@ -36,7 +37,7 @@ export default function Submissions({ mixtapeId, artistName, status, songCount, 
     // per guest, hence oncePerDevice.
     body = (
       <div className="flex flex-col gap-md">
-        <p className="text-sm text-secondary leading-relaxed">
+        <p className="text-sm leading-relaxed">
           Help {artistName ?? 'this artist'} produce this mixtape by submitting a
           song with your own custom lyrics.
         </p>
@@ -70,29 +71,12 @@ export default function Submissions({ mixtapeId, artistName, status, songCount, 
   );
 }
 
-// The countdown strip pinned above the form while a dated mixtape is taking
-// submissions: how long is left to get one in. A pulsing red so the room can't
-// miss it. Mixtapes with a deadline only — jams have no window, so they never
-// render this.
-function DeadlineStrip({ deadline, onExpire }: { deadline: string; onExpire: () => void }) {
-  return (
-    <div className="deadline-strip">
-      <span>Closing in:</span>
-      <Countdown
-        target={deadline}
-        onExpire={onExpire}
-        render={r => <span className="deadline-strip__time">{r}</span>}
-      />
-    </div>
-  );
-}
-
 // The window is configured but hasn't opened yet. Show a countdown to the start;
 // when it elapses, refresh so the form takes over.
 function PendingNotice({ status, onStart }: { status: RequestStatus; onStart: () => void }) {
   return (
     <div className="flex flex-col items-center gap-sm text-center">
-      <p className="text-sm text-secondary leading-relaxed">
+      <p className="text-sm leading-relaxed">
         The song submissions for this mixtape opens in…
       </p>
       {status.submission_start ? (
@@ -116,54 +100,9 @@ function ProducingNotice() {
   return (
     <div className="flex flex-col items-center gap-md text-center py-sm">
       <div className="spinner large processing" />
-      <p className="text-sm text-secondary leading-relaxed">
+      <p className="text-sm leading-relaxed">
         The mixtape is being produced — hang tight!
       </p>
     </div>
   );
-}
-
-// Live countdown to a target time, ticking each second. Once it elapses it calls
-// onExpire (once) so the parent refetches and the stage advances.
-function Countdown({
-  target,
-  onExpire,
-  render,
-}: {
-  target: string;
-  onExpire: () => void;
-  render: (remaining: string) => React.ReactNode;
-}) {
-  const [remaining, setRemaining] = useState(() => Date.parse(target) - Date.now());
-
-  useEffect(() => {
-    const at = Date.parse(target);
-    let fired = false;
-    const tick = () => {
-      const ms = at - Date.now();
-      setRemaining(ms);
-      if (ms <= 0 && !fired) {
-        fired = true;
-        onExpire();
-      }
-    };
-    tick();
-    const id = setInterval(tick, 1000);
-    return () => clearInterval(id);
-  }, [target, onExpire]);
-
-  if (remaining <= 0) return <span>Updating…</span>;
-  return <span>{render(formatRemaining(remaining))}</span>;
-}
-
-function formatRemaining(ms: number): string {
-  const total = Math.floor(ms / 1000);
-  const d = Math.floor(total / 86400);
-  const h = Math.floor((total % 86400) / 3600);
-  const m = Math.floor((total % 3600) / 60);
-  const s = total % 60;
-  if (d > 0) return `${d}d ${h}h ${m}m`;
-  if (h > 0) return `${h}h ${m}m ${s}s`;
-  if (m > 0) return `${m}m ${s}s`;
-  return `${s}s`;
 }

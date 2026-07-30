@@ -44,7 +44,7 @@
 
 /* No value chosen yet — read as a placeholder, like input::placeholder */
 .dropdown-trigger.placeholder {
-  color: var(--text-secondary);
+  color: var(--text-muted);
 }
 
 /* Selected value (+ optional emoji) on the left of the trigger */

@@ -49,8 +49,10 @@ interface Props {
   collectionId: string;
   /** Submissions received so far — the numerator of the count header. */
   trackCount: number;
-  /** Capacity — the denominator of the count header. */
-  maxTracks: number;
+  /** Capacity — the denominator of the count header. Null when the collection
+   *  was never given one, in which case the header shows the count alone rather
+   *  than a fraction with a hole in it. */
+  maxTracks: number | null;
   /** Cap this device at one submission for this collection: on success the
    * writer gives way to the thank-you notice, and stays that way on return
    * visits. Off by default — it takes as many submissions as the collection has
@@ -228,7 +230,9 @@ export default function SongWriter({
     <div className="songwriter">
       <div className="songwriter__header">
         <h3 className="songwriter__title">Write a song</h3>
-        <span className="songwriter__tally">{trackCount} / {maxTracks} songs</span>
+        <span className="songwriter__tally">
+          {maxTracks == null ? `${trackCount} songs` : `${trackCount} / ${maxTracks} songs`}
+        </span>
       </div>
 
       {submitted ? (
