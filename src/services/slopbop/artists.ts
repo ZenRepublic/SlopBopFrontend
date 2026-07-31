@@ -10,8 +10,13 @@ export interface Artist {
   nationality?: string;
   genres?: string[];
   zodiac_sign?: string;
-  /** The wallet that owns this artist. Absent on unclaimed artists. */
-  owner_wallet?: string;
+  /**
+   * The `user_id` of the user who controls this artist — a Solana public key.
+   * Absent on unclaimed artists. Informational only: never compare it against
+   * the session to decide what to render, since the client owns both sides of
+   * that comparison. `is_owner` below is the server's answer.
+   */
+  owner_id?: string;
 }
 
 interface ArtistResponse {

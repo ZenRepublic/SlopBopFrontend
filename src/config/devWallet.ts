@@ -13,7 +13,7 @@ import bs58 from 'bs58';
  * an artist during development costs zero clicks and no popup.
  *
  * It is a real `Adapter`, which is the whole point: `useWallet`, the connect
- * button, the account sheet and `useWalletAuth` can't tell it apart from Phantom.
+ * button, the account sheet and `AuthProvider` can't tell it apart from Phantom.
  * The signature it produces is a genuine ed25519 signature the backend verifies
  * normally — the only difference is that nothing asks you to approve it. Gated
  * content is therefore exercised through the real path, not a bypass.

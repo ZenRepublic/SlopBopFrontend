@@ -25,7 +25,7 @@ const TABS: Tab[] = [
 export function NavBar() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
-  const { isAuthed, myArtists } = useAuth();
+  const { isAuthed, artists } = useAuth();
   const [accountOpen, setAccountOpen] = useState(false);
 
   // Channel-change static: themed noise bands pop in to cover the page (the CSS
@@ -61,12 +61,14 @@ export function NavBar() {
     [handleNav],
   );
 
-  // Account's destination, resolved fresh each render. Signed in with exactly one
-  // artist it's a shortcut to that artist's page — the same public page everyone
-  // else sees, just with the owner's controls drawn on it. Every other answer
-  // (not signed in, no artist, or several to choose between) is a question, and
-  // null is how the tab says so: the sheet is what asks it.
-  const soleArtist = isAuthed && myArtists.length === 1 ? myArtists[0] : null;
+  // Account's destination, resolved fresh each render. Signed in and controlling
+  // exactly one artist it's a shortcut to that artist's page — the same public
+  // page everyone else sees, just with the owner's controls drawn on it. Every
+  // other answer (not signed in, no artist, or several to choose between) is a
+  // question, and null is how the tab says so: the sheet is what asks it. Note
+  // that an audience account lands here too — with nowhere to jump to, the sheet
+  // is what it opens, which is the right answer rather than a missing one.
+  const soleArtist = isAuthed && artists.length === 1 ? artists[0] : null;
   const accountPath = soleArtist ? `/artists/${soleArtist.artist_id}` : null;
 
   const handleTab = (tab: Tab) => {
@@ -75,10 +77,10 @@ export function NavBar() {
     else setAccountOpen(true);
   };
 
-  // Account lights up on any artist you own, not on one fixed route.
+  // Account lights up on any artist you control, not on one fixed route.
   const isActive = (tab: Tab) =>
     tab.path === null
-      ? myArtists.some(a => pathname === `/artists/${a.artist_id}`)
+      ? artists.some(a => pathname === `/artists/${a.artist_id}`)
       : pathname === tab.path;
 
   return (

@@ -1,10 +1,9 @@
 import { useState, useRef, useCallback } from 'react';
-import { createJam, ApiError, type CreatedJam } from '../services/slopbop';
-import { useAuth } from '../context/AuthContext';
+import { createJam, ApiError, NOT_YOUR_ARTIST, type CreatedJam } from '../services/slopbop';
 
 /**
- * Start a jam for an artist the session owns. Command-shaped: one action, its
- * in-flight flag, and the last error.
+ * Start a jam for an artist the session controls. Command-shaped: one action,
+ * its in-flight flag, and the last error.
  *
  * `creating` is for the button's spinner; the `inFlight` ref is the actual guard.
  * Creation renders a cover and uploads it to Arweave before it returns, so it
@@ -15,9 +14,12 @@ import { useAuth } from '../context/AuthContext';
  * Resolves to the new jam (navigate to `/jams/${collection_id}`), or null on
  * failure with `error` set. A suppressed double-fire is also null — the first
  * call is still running and will deliver the jam.
+ *
+ * Note what is no longer here: any handling of an expired session. A 401 ends
+ * the session inside `apiFetch`, which re-renders the app signed-out on its own,
+ * so this only has to speak to what's specific to creating a jam.
  */
 export function useCreateJam() {
-  const { logout } = useAuth();
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const inFlight = useRef(false);
@@ -31,29 +33,24 @@ export function useCreateJam() {
       try {
         return await createJam(artistId, cta);
       } catch (err) {
-        setError(messageFor(err, logout));
+        setError(messageFor(err));
         return null;
       } finally {
         inFlight.current = false;
         setCreating(false);
       }
     },
-    [logout],
+    [],
   );
 
   return { create, creating, error };
 }
 
-function messageFor(err: unknown, logout: () => void): string {
+function messageFor(err: unknown): string {
   if (err instanceof ApiError) {
-    // The week ran out mid-session. Nothing else notices a 401 outside the
-    // mount-time /auth/me, so drop the session here — that puts the UI back in
-    // its signed-out state, where the Account sheet asks for a signature again.
-    if (err.status === 401) {
-      logout();
-      return 'Your session expired. Sign in again to start a jam.';
-    }
-    if (err.status === 403) return "This wallet doesn't manage that artist.";
+    if (err.status === 403) return NOT_YOUR_ARTIST;
+    // The session is already gone by now — this only names what was lost.
+    if (err.status === 401) return 'Your session expired. Sign in again to start a jam.';
   }
   return 'Could not start the jam. Try again.';
 }

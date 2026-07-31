@@ -12,17 +12,25 @@ interface Props {
 }
 
 /**
- * Signing in, and nothing else. The sheet exists only while there's a question
- * to answer — connect a wallet, or hear that this one isn't on the label. The
- * moment a signed-in wallet turns out to own exactly one artist there's nothing
- * left to ask, so it closes itself and sends you to that artist's page.
+ * Signing in, and where signing in leads. The sheet exists while there's a
+ * question to answer — connect a wallet, sign the message, or pick which of
+ * several artists to open. The moment a signed-in user turns out to control
+ * exactly one artist there's nothing left to ask, so it closes itself and sends
+ * you to that artist's page.
  *
- * `ConnectWalletButton` is the single accent action throughout; anything else
+ * **Controlling no artist is a finished, valid state**, not a rejection. Most
+ * signed-in people are audience: they vote and request songs and never run an
+ * artist. So a session with an empty artist list is shown as what it is — signed
+ * in, with the wallet on screen and a way back out — rather than being told it
+ * isn't on the label.
+ *
+ * `ConnectWalletButton` is the single accent action throughout; it doubles as
+ * sign-out, since disconnecting the wallet ends the session too. Anything else
  * the sheet offers stays quiet so the primary step is never in competition.
  */
 export function AccountSheet({ open, onClose, onGoToArtist }: Props) {
   const { publicKey } = useWallet();
-  const { isAuthed, myArtists, loading, error, login } = useAuth();
+  const { isAuthed, artists, loading, error, login } = useAuth();
 
   const address = publicKey?.toBase58() ?? null;
 
@@ -43,7 +51,7 @@ export function AccountSheet({ open, onClose, onGoToArtist }: Props) {
   }, [open, address, isAuthed, loading, login]);
 
   // One artist and you're in: the sheet had one question and it's answered.
-  const soleArtist = isAuthed && myArtists.length === 1 ? myArtists[0] : null;
+  const soleArtist = isAuthed && artists.length === 1 ? artists[0] : null;
   useEffect(() => {
     if (!open || !soleArtist) return;
     onClose();
@@ -63,15 +71,15 @@ export function AccountSheet({ open, onClose, onGoToArtist }: Props) {
           </>
         ) : (
           <>
-            <Copy address={address} isAuthed={isAuthed} artistCount={myArtists.length} />
+            <Copy address={address} isAuthed={isAuthed} artistCount={artists.length} />
 
             {error && <p className="text-danger">{error}</p>}
 
-            {/* Several artists on one wallet — it can't pick for you. Quiet,
+            {/* Several artists on one account — it can't pick for you. Quiet,
                 bordered rows so the accent stays with the wallet button. */}
-            {isAuthed && myArtists.length > 1 && (
+            {isAuthed && artists.length > 1 && (
               <div className="w-full flex flex-col gap-sm">
-                {myArtists.map(artist => (
+                {artists.map(artist => (
                   <button
                     key={artist.artist_id}
                     type="button"
@@ -114,12 +122,19 @@ function Copy({
   isAuthed: boolean;
   artistCount: number;
 }) {
+  // Signed in, no artist — the ordinary case, and a complete one. It says what
+  // the session *is* rather than what it lacks: the previous copy read as a
+  // rejection ("isn't signed to any artist") for what is simply an audience
+  // account. The address is echoed so there's proof of which wallet is live,
+  // and ConnectWalletButton below is the way back out.
   if (isAuthed && artistCount === 0) {
     return (
       <>
-        <p>This wallet isn&apos;t signed to any artist on the SlopBop label.</p>
+        <p>
+          Signed in as <span className="highlight">{shorten(address)}</span>.
+        </p>
         <p className="subtle text-xs">
-          Connect the wallet your artist was signed with to try again.
+          No artist on this wallet — you&apos;re here as audience.
         </p>
       </>
     );
@@ -139,4 +154,10 @@ function Copy({
       <span className="highlight">synthetic artist</span>.
     </p>
   );
+}
+
+/** Same 4..4 form ConnectWalletButton uses, so the two agree on screen. */
+function shorten(address: string | null): string {
+  if (!address) return 'this wallet';
+  return `${address.slice(0, 4)}..${address.slice(-4)}`;
 }

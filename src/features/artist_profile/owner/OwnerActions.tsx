@@ -4,7 +4,7 @@ import CreateModal from './CreateModal';
 interface Props {
   /**
    * The server's answer for the session that asked, straight from `useArtist` —
-   * never a client-side comparison against `owner_wallet`. It's a rendering hint,
+   * never a client-side comparison against `owner_id`. It's a rendering hint,
    * so everything gated on it is UI only; the endpoints behind these actions do
    * their own checking.
    */

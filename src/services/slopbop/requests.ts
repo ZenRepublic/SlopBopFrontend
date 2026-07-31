@@ -1,4 +1,4 @@
-import { API_URL } from './client';
+import { apiFetch, ApiError } from './client';
 import { RequestStatus } from './collections';
 
 // A song submission against a collection. The collection id travels in the URL,
@@ -42,40 +42,44 @@ export type SongRequestOutcome =
   | { ok: false; kind: 'validation'; errors: Record<string, string> }
   | { ok: false; kind: 'closed'; reason: RequestClosedReason; message: string };
 
-// POST a song submission against a collection. Bypasses `apiFetch` because the
-// 400/409 responses carry bodies (field errors / closed reason) we need to read
-// rather than discard.
+// POST a song submission against a collection.
+//
+// Goes through `apiFetch` like everything else. It used to hand-roll its own
+// fetch to get at the 400/409 bodies, which also meant it silently sent no
+// Authorization header — harmless while submissions are public, and a trap the
+// moment they aren't. `ApiError.body` carries those bodies now, so the outcome
+// below is built from a caught error rather than from a raw response.
 export async function submitSongRequest(
   collectionId: string,
   payload: SongRequestPayload,
 ): Promise<SongRequestOutcome> {
-  const res = await fetch(`${API_URL}/slopbop/collections/${collectionId}/submissions`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  });
-  const data = await res.json();
-
-  if (res.status === 201) {
+  try {
+    const data = await apiFetch<SongRequestResult>(
+      `/slopbop/collections/${collectionId}/submissions`,
+      { method: 'POST', body: JSON.stringify(payload) },
+    );
     return {
       ok: true,
       data: { request_id: data.request_id, request_status: data.request_status },
     };
+  } catch (err) {
+    if (err instanceof ApiError) {
+      if (err.status === 400) {
+        return {
+          ok: false,
+          kind: 'validation',
+          errors: (err.body?.errors ?? {}) as Record<string, string>,
+        };
+      }
+      if (err.status === 409) {
+        return {
+          ok: false,
+          kind: 'closed',
+          reason: err.body?.reason as RequestClosedReason,
+          message: err.body?.error || 'Song submissions are closed for this collection',
+        };
+      }
+    }
+    throw err;
   }
-  if (res.status === 400) {
-    return {
-      ok: false,
-      kind: 'validation',
-      errors: (data.errors ?? {}) as Record<string, string>,
-    };
-  }
-  if (res.status === 409) {
-    return {
-      ok: false,
-      kind: 'closed',
-      reason: data.reason as RequestClosedReason,
-      message: data.error || 'Song submissions are closed for this collection',
-    };
-  }
-  throw new Error(data.error || 'Request failed');
 }

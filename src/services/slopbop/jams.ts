@@ -49,6 +49,13 @@ export interface JamStatus {
   selected_song_id: string | null;
 }
 
+/**
+ * What a 403 from either jam write means, in one wording. Both endpoints answer
+ * an unowned artist and an unknown one identically — that's deliberate, so a
+ * caller can't probe which artists exist — so there is exactly one thing to say.
+ */
+export const NOT_YOUR_ARTIST = "This wallet doesn't manage that artist.";
+
 /** What the server derived for a jam it just created. */
 export interface CreatedJam {
   collection_id: string;

@@ -5,15 +5,15 @@ import { useAuth } from '../context/AuthContext';
 
 export function useArtist(id: string) {
   const { showToast } = useToast();
-  const { wallet } = useAuth();
+  const { userId } = useAuth();
 
   // The session is part of the key, not just of the request: the same URL
   // answers differently signed in (`is_owner`), which is why the route sends
-  // `Vary: Authorization`. Keying on the wallet makes logging in or out refetch
+  // `Vary: Authorization`. Keying on the user makes signing in or out refetch
   // instead of leaving a page that still thinks you're a stranger.
   const { data, loading } = useResource(
     () => fetchArtist(id),
-    id ? `artist-${id}-${wallet ?? 'anon'}` : '',
+    id ? `artist-${id}-${userId ?? 'anon'}` : '',
     { onError: () => showToast('Failed to load artist') },
   );
 

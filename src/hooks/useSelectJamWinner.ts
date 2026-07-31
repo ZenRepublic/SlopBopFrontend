@@ -1,6 +1,10 @@
 import { useState, useRef, useCallback } from 'react';
-import { selectJamWinner, ApiError, type JamSelectionResult } from '../services/slopbop';
-import { useAuth } from '../context/AuthContext';
+import {
+  selectJamWinner,
+  ApiError,
+  NOT_YOUR_ARTIST,
+  type JamSelectionResult,
+} from '../services/slopbop';
 
 /**
  * Discriminated because the caller has to *do* different things, not just say
@@ -10,9 +14,10 @@ import { useAuth } from '../context/AuthContext';
  *                   resolved, or the window closed. Refetch and re-render off
  *                   the fresh phase; the message alone would be a lie the moment
  *                   it's shown.
- *   forbidden (403) this wallet doesn't own the artist. `is_owner` is a hint, so
- *                   this is the real answer arriving late.
- *   expired (401)   the session ran out; the hook has already dropped it.
+ *   forbidden (403) this wallet doesn't control the artist. `is_owner` is a
+ *                   hint, so this is the real answer arriving late.
+ *   expired (401)   the session ran out. `apiFetch` has already ended it and the
+ *                   app is re-rendering signed-out; this only names what happened.
  *   error           anything else, including the song not being in the jam.
  */
 export type JamSelectionOutcome =
@@ -33,7 +38,6 @@ export type JamSelectionOutcome =
  * race two requests to the same answer and show whichever lost as a conflict.
  */
 export function useSelectJamWinner() {
-  const { logout } = useAuth();
   const [selecting, setSelecting] = useState(false);
   const inFlight = useRef(false);
 
@@ -56,16 +60,9 @@ export function useSelectJamWinner() {
             };
           }
           if (err.status === 403) {
-            return {
-              ok: false,
-              kind: 'forbidden',
-              message: "This wallet doesn't manage that artist.",
-            };
+            return { ok: false, kind: 'forbidden', message: NOT_YOUR_ARTIST };
           }
           if (err.status === 401) {
-            // See useCreateJam — a mid-session expiry is invisible until
-            // something clears it.
-            logout();
             return {
               ok: false,
               kind: 'expired',
@@ -86,7 +83,7 @@ export function useSelectJamWinner() {
         setSelecting(false);
       }
     },
-    [logout],
+    [],
   );
 
   return { select, selecting };

@@ -13,7 +13,7 @@ export default function ArtistProfile() {
   const navigate = useNavigate();
   const artistId = id ?? '';
   // `isOwner` is the server's answer for the session that asked, not a
-  // client-side comparison against `owner_wallet` — the page re-fetches on login
+  // client-side comparison against `owner_id` — the page re-fetches on login
   // because `useArtist` keys its cache on the session.
   const { artist, isOwner, loading } = useArtist(artistId);
   // An open jam makes the artist "live" — see useLiveJam. It loads

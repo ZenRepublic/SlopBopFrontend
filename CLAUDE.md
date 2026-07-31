@@ -27,13 +27,19 @@ Env: `VITE_API_URL` (backend base, defaults `http://localhost:5000`), `VITE_SOL_
 - **`src/components/`** — shared UI richer than a primitive: app-shell chrome, and blocks assembled from primitives. When two features need the same block it lives here, so no feature reaches into another's folder.
 - **`src/primitives/`** — presentation-only, no domain shape. If it encodes a product concept or is assembled from other pieces, it's a `components/` block.
 
-## Wallet auth
+## The signed-in user
 
-An artist belongs to a wallet (`owner_wallet`). `useWalletAuth` runs challenge → sign → verify for a 7-day JWT, `AuthProvider` holds it app-wide, `apiFetch` attaches it to every request. The token is stored **keyed by wallet address** and dropped when the adapter switches keys or disconnects — a stale token answers confidently for the wrong owner.
+**One store, `services/slopbop/session.ts`.** It holds the token, the user, and the artists they control, and it's the only place any of that lives. `apiFetch` reads the token from it; React reads the rest with `useSyncExternalStore` via `AuthProvider`. **Never mirror session state into component state** — a copy is a thing that can disagree, which is what this replaced. `auth.ts` owns the challenge → sign → verify → `/auth/me` flow and is the only writer.
 
-**Ownership is the server's answer.** Gate owner UI on `is_owner` from the artist's own fetch, never by comparing `publicKey` to `owner_wallet`. It's a rendering hint: forging it only draws buttons. Nothing consumes it yet — there are no owner-gated writes, so an owner action is a plain authenticated request, not another signature.
+**A user is not an artist.** `isAuthed` means a wallet was proved — that's the only thing that should gate "may you act at all". `artists` is a separate fact and is usually empty: most signed-in people are audience. Gating UI on `artists.length` turns an ordinary account into a broken one. Zero is valid, several is valid.
 
-**Account** is a `TABS` entry with a `path` of `null`, because its destination isn't a constant: signed in with one artist it navigates to `/artists/:id`, anything else opens `AccountSheet`. There is no `/me` page — an owner sees the same URL as everyone else, with more on it.
+**Session expiry is handled once**, inside `apiFetch`: a 401 on a request that carried a token ends the session and re-renders the app signed-out. Feature hooks handle only what's theirs — 403, 404, 409 — and must not re-implement logout. A 401 without a token (a bad signature at `/auth/verify`) is not an expiry and is left alone.
+
+**Don't hand-roll `fetch`.** `ApiError` carries `status` and the parsed `body`, so endpoints answering with field errors or a `reason` code are readable through `apiFetch`. Dropping out of it silently drops the Authorization header.
+
+**Ownership is the server's answer.** Gate owner UI on `is_owner` from the artist's own fetch, never by comparing a public key to `owner_id`. It's a rendering hint: forging it only draws buttons.
+
+**Account** is a `TABS` entry with a `path` of `null`, because its destination isn't a constant: signed in and controlling one artist it navigates to `/artists/:id`, anything else (including an audience account) opens `AccountSheet`. There is no `/me` page — an owner sees the same URL as everyone else, with more on it.
 
 ## Styling — two systems by design
 
