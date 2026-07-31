@@ -10,6 +10,16 @@ export interface SongRequestPayload {
   text: string;   // required, ≤ 260 chars
 }
 
+/**
+ * The signed door's body — no name in it. Anyone with an account submits this
+ * way, artist or audience; the server credits the account itself, so a name here
+ * would be a stale copy at best and a forgery at worst. It isn't sent, and
+ * wouldn't be believed.
+ */
+export interface SignedSongRequestPayload {
+  text: string;   // required, ≤ 260 chars
+}
+
 // Returned on a successful 201. The submit endpoint also echoes the freshly
 // re-evaluated window so the caller can update the capacity gauge without a
 // separate refetch.
@@ -36,26 +46,29 @@ export type RequestClosedReason =
 //   validation → field→message map from a 400 (same shape as the application form)
 //   closed     → the window closed server-side between load and submit (409); the
 //                caller should surface the message and refresh the collection
-// A 404 (collection not found), 500, or network error rejects.
+// A 404 (collection not found), 500, or network error rejects. The signed door
+// adds no failure of its own: it takes any account, so there's nothing to be
+// refused for beyond the session itself, which `apiFetch` already handles on 401.
 export type SongRequestOutcome =
   | { ok: true; data: SongRequestResult }
   | { ok: false; kind: 'validation'; errors: Record<string, string> }
   | { ok: false; kind: 'closed'; reason: RequestClosedReason; message: string };
 
-// POST a song submission against a collection.
+// POST a song submission. Shared by both doors, which differ only in their path
+// and their body — the failures are identical.
 //
 // Goes through `apiFetch` like everything else. It used to hand-roll its own
 // fetch to get at the 400/409 bodies, which also meant it silently sent no
 // Authorization header — harmless while submissions are public, and a trap the
 // moment they aren't. `ApiError.body` carries those bodies now, so the outcome
 // below is built from a caught error rather than from a raw response.
-export async function submitSongRequest(
-  collectionId: string,
-  payload: SongRequestPayload,
+async function postSubmission(
+  path: string,
+  payload: SongRequestPayload | SignedSongRequestPayload,
 ): Promise<SongRequestOutcome> {
   try {
     const data = await apiFetch<SongRequestResult>(
-      `/slopbop/collections/${collectionId}/submissions`,
+      path,
       { method: 'POST', body: JSON.stringify(payload) },
     );
     return {
@@ -83,3 +96,15 @@ export async function submitSongRequest(
     throw err;
   }
 }
+
+/** The anonymous door: the typed name is the credit. */
+export const submitSongRequest = (collectionId: string, payload: SongRequestPayload) =>
+  postSubmission(`/slopbop/collections/${collectionId}/submissions`, payload);
+
+/**
+ * The signed door, for anyone with an account. `apiFetch` attaches the bearer
+ * token on its own, so the path is the only difference: the server credits the
+ * account it just verified instead of reading a name off the body.
+ */
+export const submitSignedSongRequest = (collectionId: string, payload: SignedSongRequestPayload) =>
+  postSubmission(`/slopbop/collections/${collectionId}/submissions/me`, payload);

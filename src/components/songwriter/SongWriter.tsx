@@ -1,6 +1,7 @@
 import { useState, useRef, useLayoutEffect } from 'react';
 import { useSubmitSongRequest } from '../../hooks/useSubmitSongRequest';
 import { useToast } from '../../context/ToastContext';
+import { useAuth } from '../../context/AuthContext';
 import {
   LINE_MAX,
   MAX_LINES,
@@ -101,6 +102,10 @@ export default function SongWriter({
   );
   const { submit, submitting, fieldErrors } = useSubmitSongRequest();
   const { showToast } = useToast();
+  // Signing in replaces the signature slot: the account IS the credit, so there
+  // is nothing to type and nothing a typed name could add. The hook posts through
+  // the matching door off the same flag, so the two can't drift apart.
+  const { isAuthed } = useAuth();
 
   const [author, setAuthor] = useState('');
   const [page, setPage] = useState(blankPage);
@@ -194,7 +199,7 @@ export default function SongWriter({
 
   const remaining = WRITABLE_MAX - contentLength(page);
 
-  const authorValid = author.trim().length > 0 && author.length <= AUTHOR_MAX;
+  const authorValid = isAuthed || (author.trim().length > 0 && author.length <= AUTHOR_MAX);
   const textValid = text.trim().length > 0 && text.length <= TEXT_MAX;
   const allValid = authorValid && textValid;
 
@@ -288,16 +293,20 @@ export default function SongWriter({
           </div>
           {fieldErrors.text && <p className="songwriter__error">{fieldErrors.text}</p>}
 
-          <label className={`songwriter__author${fieldErrors.author ? ' error' : ''}`}>
-            <span className="songwriter__author-label">written by</span>
-            <input
-              type="text"
-              value={author}
-              maxLength={AUTHOR_MAX}
-              onChange={e => setAuthor(e.target.value)}
-            />
-          </label>
-          {fieldErrors.author && <p className="songwriter__error">{fieldErrors.author}</p>}
+          {!isAuthed && (
+            <>
+              <label className={`songwriter__author${fieldErrors.author ? ' error' : ''}`}>
+                <span className="songwriter__author-label">written by</span>
+                <input
+                  type="text"
+                  value={author}
+                  maxLength={AUTHOR_MAX}
+                  onChange={e => setAuthor(e.target.value)}
+                />
+              </label>
+              {fieldErrors.author && <p className="songwriter__error">{fieldErrors.author}</p>}
+            </>
+          )}
 
           <button
             type="button"

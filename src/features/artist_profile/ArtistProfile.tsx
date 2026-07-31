@@ -95,7 +95,9 @@ export default function ArtistProfile() {
 
       {/* Discography */}
       <div className="p-lg">
-        <Discography artistId={artistId} artistName={artist.name} />
+        {/* `owner_id`, not `isOwner`: this sorts songs by who wrote them, which
+            is the same for every visitor, rather than by who is looking. */}
+        <Discography artistId={artistId} artistName={artist.name} ownerId={artist.owner_id} />
       </div>
     </div>
   );

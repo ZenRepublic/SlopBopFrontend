@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
 import { useJam } from '../../hooks/useJam';
 import { useArtist } from '../../hooks/useArtist';
+import { songCredit } from '../../services/slopbop';
 import SongList from '../../components/songlist/SongList';
 import Img from '../../primitives/Img';
 import JamSubmissions from './JamSubmissions';
@@ -112,7 +113,7 @@ export default function JamPage() {
             audioUrl: song.audio_url || '',
             duration: song.duration,
             lyrics: song.lyrics,
-            author: song.author,
+            author: songCredit(song, artist),
             bops: song.bops,
             artistId: song.artist_id,
             artistName: artist?.name,

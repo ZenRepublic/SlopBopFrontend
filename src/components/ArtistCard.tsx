@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Artist } from '../services/slopbop';
+import { Artist, songCredit } from '../services/slopbop';
 import { useTopSong } from '../hooks/useTopSong';
 import { useMusicPlayer } from '../context/MusicPlayerContext';
 import SingleCard from './songlist/SingleCard';
@@ -44,7 +44,7 @@ export function ArtistCard({ artist }: { artist: Artist }) {
                 audioUrl: topSong.audio_url!,
                 duration: topSong.duration,
                 lyrics: topSong.lyrics,
-                author: topSong.author,
+                author: songCredit(topSong, artist),
                 bops: topSong.bops,
                 artistId: artist.artist_id,
                 artistName: artist.name,

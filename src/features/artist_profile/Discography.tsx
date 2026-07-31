@@ -2,38 +2,51 @@ import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCollections } from '../../hooks/useCollections';
 import { useSongs } from '../../hooks/useSongs';
-import type { Collection, Song } from '../../services/slopbop';
+import { isArtistsOwnWork, songCredit, type Collection, type Song } from '../../services/slopbop';
 import AlbumCard from './AlbumCard';
 import SongList from '../../components/songlist/SongList';
 
 interface Props {
   artistId: string;
   artistName?: string;
+  /**
+   * The artist's `owner_id`, which is what a single's `created_by` is measured
+   * against to sort it into a tab. Absent on an unclaimed artist — then nothing
+   * can be the artist's own work, and every single reads as community.
+   */
+  ownerId?: string;
 }
 
 // The artist's catalogue, split across two tabs (see the `view` toggle below).
 //
-//   Original   the permanent catalogue — authored albums, plus the singles that
-//              never landed on one. This is the default view and the artist's
-//              own work.
+//   Original   the permanent catalogue — authored albums, plus the singles the
+//              artist wrote themselves. This is the default view.
 //   Community  mixtapes: a commissioned group's artifact from their own day.
 //              Filing someone's birthday party under the label's discography
 //              would misread it, so it lives behind its own tab — a holding
 //              place while we work out how to make mixtapes truly ephemeral.
+//              Also the singles a fan wrote: a jam winner is promoted by having
+//              its `collection_id` cleared, so nothing but `created_by` would
+//              tell it apart from a single the artist wrote.
 //
 // Jams are absent from both: a live session is not a release. One surfaces as
 // the LIVE card at the top of the profile and is gone once it resolves.
 //
 // Singles are derived, not fetched: any song without a `collection_id`. Songs
 // that belong to an album, mixtape, or jam all carry one, so they never fall
-// through to singles.
+// through to singles. Which HALF a single lands in is derived too, from whether
+// its `created_by` is the artist's owner. Collection-bound songs need no such
+// test — the shelf they sit on already says which side they're on.
 export interface GroupedDiscography {
   albums: { album: Collection; songs: Song[] }[];
+  /** Singles the artist wrote themselves. */
   singles: Song[];
+  /** Singles somebody else wrote — a won jam, today. */
+  communitySingles: Song[];
   mixtapes: Collection[];
 }
 
-function useDiscography(artistId: string): {
+function useDiscography(artistId: string, ownerId?: string): {
   discography: GroupedDiscography;
   loading: boolean;
   refetch: () => void;
@@ -45,14 +58,17 @@ function useDiscography(artistId: string): {
   const discography = useMemo<GroupedDiscography>(() => {
     const songsByCollection = new Map<string, Song[]>();
     const singles: Song[] = [];
+    const communitySingles: Song[] = [];
 
     for (const song of songs) {
       if (song.collection_id) {
         const list = songsByCollection.get(song.collection_id) ?? [];
         list.push(song);
         songsByCollection.set(song.collection_id, list);
-      } else {
+      } else if (isArtistsOwnWork(song, ownerId)) {
         singles.push(song);
+      } else {
+        communitySingles.push(song);
       }
     }
 
@@ -62,8 +78,8 @@ function useDiscography(artistId: string): {
         songs: songsByCollection.get(album._id) ?? [],
       }));
 
-    return { albums: group(albums), singles, mixtapes };
-  }, [albums, songs, mixtapes]);
+    return { albums: group(albums), singles, communitySingles, mixtapes };
+  }, [albums, songs, mixtapes, ownerId]);
 
   return {
     discography,
@@ -74,16 +90,31 @@ function useDiscography(artistId: string): {
 
 type View = 'original' | 'community';
 
-export default function Discography({ artistId, artistName }: Props) {
-  const { discography, loading, refetch } = useDiscography(artistId);
+export default function Discography({ artistId, artistName, ownerId }: Props) {
+  const { discography, loading, refetch } = useDiscography(artistId, ownerId);
   const navigate = useNavigate();
   const [view, setView] = useState<View>('original');
 
   if (loading) return null;
 
   const hasOriginal = discography.albums.length > 0 || discography.singles.length > 0;
-  const hasCommunity = discography.mixtapes.length > 0;
+  const hasCommunity = discography.mixtapes.length > 0 || discography.communitySingles.length > 0;
   if (!hasOriginal && !hasCommunity) return null;
+
+  // Shared by both tabs' song lists — the only thing that differs between them
+  // is which list is passed in. `songCredit` reads just these two artist fields.
+  const toTrack = (song: Song) => ({
+    id: song._id,
+    title: song.title || 'Untitled',
+    coverUrl: song.cover_url,
+    audioUrl: song.audio_url || '',
+    duration: song.duration,
+    lyrics: song.lyrics,
+    author: songCredit(song, { owner_id: ownerId, name: artistName }),
+    bops: song.bops,
+    artistId: song.artist_id,
+    artistName,
+  });
 
   // The toggle only earns its place once there's community work to switch to;
   // most artists have none, and a permanently half-empty control is just noise.
@@ -136,41 +167,37 @@ export default function Discography({ artistId, artistName }: Props) {
           {discography.singles.length > 0 && (
             <div className="flex flex-col gap-md">
               <h2 className="font-display text-lg">Singles</h2>
-              <SongList
-                songs={discography.singles}
-                onRefetch={refetch}
-                toTrack={song => ({
-                  id: song._id,
-                  title: song.title || 'Untitled',
-                  coverUrl: song.cover_url,
-                  audioUrl: song.audio_url || '',
-                  duration: song.duration,
-                  lyrics: song.lyrics,
-                  author: song.author,
-                  bops: song.bops,
-                  artistId: song.artist_id,
-                  artistName,
-                })}
-              />
+              <SongList songs={discography.singles} onRefetch={refetch} toTrack={toTrack} />
             </div>
           )}
         </>
       )}
 
       {activeView === 'community' && (
-        <div className="flex flex-col gap-md">
-          <h2 className="font-display text-lg">Mixtapes</h2>
-          <div className="grid grid-cols-2 gap-md">
-            {discography.mixtapes.map(mixtape => (
-              <AlbumCard
-                key={mixtape._id}
-                coverUrl={mixtape.cover_url}
-                title={mixtape.title || 'Untitled'}
-                onClick={() => navigate(`/mixtapes/${mixtape._id}`)}
-              />
-            ))}
-          </div>
-        </div>
+        <>
+          {discography.mixtapes.length > 0 && (
+            <div className="flex flex-col gap-md">
+              <h2 className="font-display text-lg">Mixtapes</h2>
+              <div className="grid grid-cols-2 gap-md">
+                {discography.mixtapes.map(mixtape => (
+                  <AlbumCard
+                    key={mixtape._id}
+                    coverUrl={mixtape.cover_url}
+                    title={mixtape.title || 'Untitled'}
+                    onClick={() => navigate(`/mixtapes/${mixtape._id}`)}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {discography.communitySingles.length > 0 && (
+            <div className="flex flex-col gap-md">
+              <h2 className="font-display text-lg">Singles</h2>
+              <SongList songs={discography.communitySingles} onRefetch={refetch} toTrack={toTrack} />
+            </div>
+          )}
+        </>
       )}
     </div>
   );

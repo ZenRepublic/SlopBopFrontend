@@ -14,7 +14,21 @@ export interface Song {
   audio_url?: string;
   animation_url?: string;
   lyrics?: string;
-  author?: string; // credited writer of the lyrics
+  /**
+   * The credit, as exactly one of these two — never read `author` directly, use
+   * `songCredit` (credit.ts), which knows which one is in play.
+   *
+   * `created_by` is the `user_id` of the account that wrote the song, and the
+   * display name is *resolved* from it: matching the artist's `owner_id` means
+   * the artist themselves. Empty means nobody signed in, and only then does
+   * `author` — a literal name typed into the submission form — carry the credit.
+   *
+   * The same comparison sorts a song into the Original or Community half of a
+   * discography: a jam winner keeps the empty `created_by` its anonymous seed
+   * gave it, even after promotion clears its `collection_id`.
+   */
+  author?: string;
+  created_by?: string;
   caption?: string;
   bpm?: number;
   keyscale?: string;

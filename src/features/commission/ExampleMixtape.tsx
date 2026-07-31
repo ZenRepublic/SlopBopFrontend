@@ -1,4 +1,4 @@
-import { isReleased, type Song } from '../../services/slopbop';
+import { isReleased, songCredit, type Song } from '../../services/slopbop';
 import { useMixtape } from '../../hooks/useMixtape';
 import { useArtist } from '../../hooks/useArtist';
 import { useMusicPlayer, type Track } from '../../context/MusicPlayerContext';
@@ -44,7 +44,7 @@ export function ExampleMixtape() {
     audioUrl: song.audio_url!,
     duration: song.duration,
     lyrics: song.lyrics,
-    author: song.author,
+    author: songCredit(song, artist),
     bops: song.bops,
     artistId: mixtape.artist_id,
     artistName: artist?.name,
