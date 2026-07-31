@@ -3,14 +3,20 @@ import { Footer } from '../../components/Footer';
 import { SocialLinks } from '../../primitives/SocialLinks';
 import { Flourish } from '../../primitives/Flourish';
 import { useArtists } from '../../hooks/useArtists';
-import { FeaturedArtistCard } from './FeaturedArtistCard';
+import { useLiveJam } from '../../hooks/useLiveJam';
+import { PublicJamCard } from './PublicJamCard';
 import { Testimonials } from './Testimonials';
 import { PROJECT_SOCIALS } from '../../config/socials';
 
 export default function AboutPage() {
   const navigate = useNavigate();
   const { artists } = useArtists();
-  const featured = artists[0];
+  // Whichever artist is hosting is the one we show. Until the backend can
+  // answer "which jam is live right now" across the roster, that's the first
+  // artist's — the same one the featured card used to pick, and correct while
+  // one jam runs at a time.
+  const host = artists[0];
+  const { jam, refetch } = useLiveJam(host?.artist_id ?? '');
 
   return (
     <div className="flex flex-col gap-xl py-lg">
@@ -37,12 +43,24 @@ export default function AboutPage() {
         <SocialLinks socials={PROJECT_SOCIALS} className="justify-center pt-sm" />
       </section>
 
-      {/* Featured artist — a taste of the roster. No "view all" button beneath
-          it: it out-competed the card for the tap, so the one artist we chose to
-          show got skipped on the way to a list. Roster is a permanent nav tab,
-          so the full list is always one tap away regardless. */}
+      {/* Public Jams — the one thing on this page a visitor can act on today,
+          which is why it outranks the commission teaser below it. It replaced a
+          featured artist card: featuring someone only pays off when there's
+          something of theirs to do, and a portrait with a name under it isn't
+          that. No "view all" button beneath it, for the reason the featured
+          card never had one either — it out-competes the card for the tap, and
+          Roster is a permanent nav tab anyway.
+
+          The sentence stands whether or not a jam is running; the card is the
+          part that needs one. Between jams the offer is still worth stating —
+          it's a weekly thing, and "come back" is a real message. */}
       <section className="flex flex-col gap-md px-md">
-        {featured && <FeaturedArtistCard artist={featured} />}
+        <h2 className="font-display text-2xl">Public Jams</h2>
+        <p className="text-base leading-relaxed">
+          Each week, we host a <span className="highlight">public jam</span> featuring one of our
+          signed artists, who produces the songs you write.
+        </p>
+        {jam && <PublicJamCard jam={jam} onExpire={refetch} />}
       </section>
 
       <Flourish />

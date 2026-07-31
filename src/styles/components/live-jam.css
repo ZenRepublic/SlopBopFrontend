@@ -130,6 +130,66 @@
   opacity: 0.8;
 }
 
+/* ------------------------------------------------------------
+   Public Jam — the About page's showcase variant. Same red frame
+   and the same pulse, but stacked instead of side-by-side: cover
+   across the full column, everything else beneath it. It reuses
+   the gauge, count and cta parts above verbatim, which is the
+   point — the card a visitor meets on the landing page and the
+   one on the artist's profile have to read as the same object.
+   ------------------------------------------------------------ */
+.public-jam {
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  border: 1px solid var(--color-error);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--color-error) 28%, var(--bg-primary));
+  color: var(--white);
+  cursor: pointer;
+  transition: transform var(--transition-base);
+  animation: live-jam-pulse 2.2s ease-in-out infinite;
+}
+
+.public-jam:active {
+  transform: scale(0.98);
+}
+
+/* The affordance, as a tab off the right edge. It sits low rather than in the
+   top-right corner because the cover is the card's only text identity now —
+   the jam's title and the artist's name are painted into the artwork, and a
+   corner tab lands straight on them. Below the middle it clears the art's
+   subject and reads as a button hanging off the frame. */
+.public-jam__tab {
+  position: absolute;
+  right: 0;
+  bottom: 18%;
+  background: var(--color-error);
+  color: var(--white);
+  font-family: var(--font-accent);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: var(--space-xs) var(--space-md);
+  border-top-left-radius: var(--radius-lg);
+  border-bottom-left-radius: var(--radius-lg);
+}
+
+.public-jam__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  padding: var(--space-md) var(--space-lg);
+}
+
+/* Capacity left, clock right — the two ways a jam can close, on one line. */
+.public-jam__meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .live-badge__dot {
     animation: none;
@@ -137,7 +197,8 @@
   }
 
   /* Keep a static glow so the card still reads as lit, just not moving. */
-  .live-jam {
+  .live-jam,
+  .public-jam {
     animation: none;
     box-shadow: 0 0 12px 1px color-mix(in srgb, var(--color-error) 45%, transparent);
   }

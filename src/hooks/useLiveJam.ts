@@ -21,15 +21,16 @@ import type { Collection } from '../services/slopbop';
 export function useLiveJam(artistId: string): {
   jam: Collection | null;
   loading: boolean;
+  refetch: () => void;
 } {
-  const { collections, loading } = useCollections(artistId, 'jam');
+  const { collections, loading, refetch } = useCollections(artistId, 'jam');
 
   const jam =
     collections
       .filter(c => !c.selected_song_id)
       .sort((a, b) => (b.created_at ?? '').localeCompare(a.created_at ?? ''))[0] ?? null;
 
-  return { jam, loading };
+  return { jam, loading, refetch };
 }
 
 /** Submissions in vs. capacity. `submission_count` is the authored field; fall

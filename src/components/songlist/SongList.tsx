@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useState } from 'react';
 import { isReleased, type Song } from '../../services/slopbop';
 import { useMusicPlayer, type Track } from '../../context/MusicPlayerContext';
 import SingleCard from './SingleCard';
@@ -25,8 +25,6 @@ interface Props {
   songs: Song[];
   /** Maps a song to a playable track — supplies cover/artist context per caller. */
   toTrack: (song: Song) => Track;
-  /** Optional left-aligned heading shown on the same row as the sort toggle. */
-  header?: ReactNode;
   /**
    * Re-fetch the songs. Called when an upcoming song's countdown elapses — the
    * released song (with its now-available audio) has to come back from the
@@ -52,8 +50,13 @@ interface Props {
  * *soonest* such song is surfaced, as a "processing" countdown card pinned below
  * the released rows; when its timer elapses the card asks us to re-fetch, and the
  * now-released song (with audio) comes back as a normal row.
+ *
+ * With nothing to play the list stays on screen as an empty state — the controls
+ * remain, play-all disabled — so callers can render it unconditionally. A caller
+ * that shouldn't announce an empty section at all (a heading over zero songs)
+ * still decides that for itself, by not rendering us.
  */
-export default function SongList({ songs, toTrack, header, onRefetch }: Props) {
+export default function SongList({ songs, toTrack, onRefetch }: Props) {
   const { playQueue, track, playing, togglePlay } = useMusicPlayer();
   const [sort, setSort] = useState<SongSort>('release');
 
@@ -86,36 +89,31 @@ export default function SongList({ songs, toTrack, header, onRefetch }: Props) {
   const isCurrentList = !!track && sorted.some(s => s._id === track.id);
   const showPause = isCurrentList && playing;
 
-  // Nothing released and nothing upcoming — an empty section with a dead
-  // play-all button just looks broken, so render nothing at all.
-  if (sorted.length === 0 && !nextUp) return null;
-
   return (
     <div className="flex flex-col gap-md">
       <div className="flex items-center justify-between gap-md">
-        <div className="flex items-center gap-md min-w-0">
-          {header}
-          <div className="flex rounded-md overflow-hidden border border-border text-xs flex-shrink-0">
-            {SORTS.map(({ key, label }) => (
-              <button
-                key={key}
-                type="button"
-                onClick={() => setSort(key)}
-                className={`px-sm py-xs whitespace-nowrap transition-base ${
-                  sort === key ? 'bg-surface text-primary' : 'text-muted'
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
+        <div className="flex rounded-md overflow-hidden border border-border text-xs flex-shrink-0">
+          {SORTS.map(({ key, label }) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setSort(key)}
+              className={`px-sm py-xs whitespace-nowrap transition-base ${
+                sort === key ? 'bg-surface text-primary' : 'text-muted'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
         </div>
         <button
           type="button"
+          disabled={tracks.length === 0}
           onClick={() => (isCurrentList ? togglePlay() : playQueue(tracks, 0))}
           aria-label={showPause ? 'Pause' : 'Play all'}
           className="w-9 h-9 rounded-full bg-white flex items-center justify-center flex-shrink-0
-                     cursor-pointer active:scale-90 transition-base"
+                     cursor-pointer active:scale-90 transition-base
+                     disabled:opacity-30 disabled:cursor-default disabled:active:scale-100"
         >
           {showPause ? (
             <svg viewBox="0 0 24 24" fill="var(--black)" className="w-4 h-4">
@@ -129,6 +127,14 @@ export default function SongList({ songs, toTrack, header, onRefetch }: Props) {
           )}
         </button>
       </div>
+      {/* An empty list still renders its box: a section that vanishes reads as
+          broken, where "nothing here yet" reads as a state. Suppressed while a
+          countdown card is up — that *is* the list's content for now. */}
+      {sorted.length === 0 && !nextUp && (
+        <div className="flex items-center justify-center bg-surface-2 rounded-lg p-lg">
+          <p className="text-sm subtle">No songs in this list yet</p>
+        </div>
+      )}
       {sorted.length > 0 && (
         <div className="flex flex-col bg-surface-2 rounded-lg p-sm">
           {sorted.map((song, i) => (

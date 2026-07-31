@@ -134,23 +134,25 @@ export default function Discography({ artistId, artistName }: Props) {
           )}
 
           {discography.singles.length > 0 && (
-            <SongList
-              songs={discography.singles}
-              header={<h2 className="font-display text-lg">Singles</h2>}
-              onRefetch={refetch}
-              toTrack={song => ({
-                id: song._id,
-                title: song.title || 'Untitled',
-                coverUrl: song.cover_url,
-                audioUrl: song.audio_url || '',
-                duration: song.duration,
-                lyrics: song.lyrics,
-                author: song.author,
-                bops: song.bops,
-                artistId: song.artist_id,
-                artistName,
-              })}
-            />
+            <div className="flex flex-col gap-md">
+              <h2 className="font-display text-lg">Singles</h2>
+              <SongList
+                songs={discography.singles}
+                onRefetch={refetch}
+                toTrack={song => ({
+                  id: song._id,
+                  title: song.title || 'Untitled',
+                  coverUrl: song.cover_url,
+                  audioUrl: song.audio_url || '',
+                  duration: song.duration,
+                  lyrics: song.lyrics,
+                  author: song.author,
+                  bops: song.bops,
+                  artistId: song.artist_id,
+                  artistName,
+                })}
+              />
+            </div>
           )}
         </>
       )}
