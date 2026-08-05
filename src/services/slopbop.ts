@@ -15,3 +15,4 @@ export * from './slopbop/sim';
 export * from './slopbop/auth';
 export * from './slopbop/application';
 export * from './slopbop/requests';
+export * from './slopbop/visuals';
