@@ -1,8 +1,20 @@
 {
   "rewrites": [
     {
+      "source": "/artists/:id",
+      "destination": "/api/artists/:id"
+    },
+    {
       "source": "/albums/:id",
       "destination": "/api/albums/:id"
+    },
+    {
+      "source": "/mixtapes/:id",
+      "destination": "/api/mixtapes/:id"
+    },
+    {
+      "source": "/jams/:id",
+      "destination": "/api/jams/:id"
     },
     {
       "source": "/((?!api/).*)",
