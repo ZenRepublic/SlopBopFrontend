@@ -69,7 +69,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // homepage is a better outcome for them than a 404 either way.
   if (!isKnownSlug(slug)) {
     res.setHeader('Cache-Control', 'no-store');
-    res.redirect(302, 'https://slopbop.com/?ref=sticker');
+    res.redirect(302, 'https://www.slopbop.com/?ref=sticker');
     return;
   }
 

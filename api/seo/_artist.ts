@@ -21,7 +21,7 @@ interface Artist {
 const PORTRAIT_SIZE = 1024;
 // Artists without a portrait render `/Images/mystery-actor.png` in the app, so
 // the embed shows the same face rather than the site banner.
-const MYSTERY_PORTRAIT = 'https://slopbop.com/Images/mystery-actor.png';
+const MYSTERY_PORTRAIT = 'https://www.slopbop.com/Images/mystery-actor.png';
 
 function describe(artist: Artist, name: string): string {
   if (artist.bio?.trim()) return clip(artist.bio);

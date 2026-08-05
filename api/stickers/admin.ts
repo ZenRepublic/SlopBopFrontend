@@ -233,7 +233,7 @@ function renderCard(s: SlugStats, origin: string): string {
         <input type="hidden" name="slug" value="${esc(s.slug)}" />
         <label for="t-${esc(s.slug)}">Points at${s.live ? '' : ' (fallback — nothing set)'}</label>
         <input id="t-${esc(s.slug)}" type="url" name="target" value="${esc(s.effective)}"
-               placeholder="https://slopbop.com/jams/…" required />
+               placeholder="https://www.slopbop.com/jams/…" required />
         <div class="row">
           <button type="submit">Point it here</button>
           ${s.live ? '<button class="ghost" type="submit" name="reset" value="1">Reset</button>' : ''}

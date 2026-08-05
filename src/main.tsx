@@ -1,6 +1,8 @@
 import { Buffer } from 'buffer';
 window.Buffer = Buffer;
 
+import { registerSW } from 'virtual:pwa-register';
+
 import { StrictMode, ReactNode, useEffect, useMemo } from 'react';
 import { createRoot } from 'react-dom/client';
 import {
@@ -50,6 +52,18 @@ import MiniPlayer from './components/MiniPlayer';
 
 import './styles/index.css';
 import '@solana/wallet-adapter-react-ui/styles.css';
+
+/**
+ * Service worker registration.
+ *
+ * This is what makes `registerType: 'autoUpdate'` in vite.config.ts true.
+ * Without it, vite-plugin-pwa injects a bare `register()` that never reacts to
+ * a new worker, so a deploy kept serving the precached shell until you
+ * refreshed — and the new worker could claim a running page, leaving old code
+ * to request chunks that only exist in the new precache. This reloads once when
+ * the new worker takes over.
+ */
+registerSW({ immediate: true });
 
 /**
  * ---------------------------------------------------------

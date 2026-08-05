@@ -18,7 +18,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 // This module is the plumbing; each handler owns only its fetch and its copy.
 
 export const API_URL = (process.env.VITE_API_URL || 'http://localhost:5000').replace(/\/+$/, '');
-export const FALLBACK_IMAGE = 'https://slopbop.com/Branding/og-banner.png';
+export const FALLBACK_IMAGE = 'https://www.slopbop.com/Branding/og-banner.png';
 
 /** What one route wants the crawler to see. */
 export interface Embed {

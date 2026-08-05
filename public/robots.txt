@@ -5,4 +5,4 @@ Allow: /
 # numbers, and there's nothing here to index: /go/ only ever 302s elsewhere.
 Disallow: /go/
 
-Sitemap: https://slopbop.com/sitemap.xml
+Sitemap: https://www.slopbop.com/sitemap.xml

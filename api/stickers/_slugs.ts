@@ -26,12 +26,12 @@ export const STICKERS: Record<string, Sticker> = {
   listen: {
     label: 'Listen',
     intent: 'Passive pitch — hear what the label sounds like.',
-    fallback: 'https://slopbop.com/roster',
+    fallback: 'https://www.slopbop.com/roster',
   },
   write: {
     label: 'Write',
     intent: 'Active pitch — you write the lyrics, an artist records them.',
-    fallback: 'https://slopbop.com',
+    fallback: 'https://www.slopbop.com',
   },
 };
 

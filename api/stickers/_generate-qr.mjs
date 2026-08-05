@@ -12,7 +12,7 @@
 //
 // Options:
 //   --size=40      finished width in mm (default 40)
-//   --origin=…     default https://slopbop.com
+//   --origin=…     default https://www.slopbop.com
 //   --level=H      error correction: L, M, Q or H (default H)
 //
 // Three things here are load-bearing for a code that has to work on a wall:
@@ -56,7 +56,7 @@ const flag = (name, fallback) => {
 
 const slugs = args.filter(a => !a.startsWith('--'));
 const size = Number(flag('size', 40));
-const origin = flag('origin', 'https://slopbop.com').replace(/\/+$/, '');
+const origin = flag('origin', 'https://www.slopbop.com').replace(/\/+$/, '');
 const level = flag('level', 'H').toUpperCase();
 
 if (slugs.length === 0) {
