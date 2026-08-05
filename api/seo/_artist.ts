@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { API_URL, clip, fetchJson, serveEmbed } from './embed';
+import { API_URL, clip, fetchJson, serveEmbed } from './_appShell.js';
 
-// Embed for /artists/:id — see `embed.ts` for why this is server-rendered.
+// Embed for /artists/:id — see `appShell.ts` for why this is server-rendered.
 //
 // An artist page is the one link a *person* gets shared as, so the unfurl leads
 // with the portrait and the artist's own bio. The bio is the best description

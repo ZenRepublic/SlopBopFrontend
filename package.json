@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
+    "qr": "node api/stickers/_generate-qr.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { API_URL, FALLBACK_IMAGE, fetchJson, serveEmbed } from './embed';
+import { API_URL, FALLBACK_IMAGE, fetchJson, serveEmbed } from './_appShell.js';
 
-// Embeds for /albums/:id, /mixtapes/:id and /jams/:id — see `embed.ts` for why
+// Embeds for /albums/:id, /mixtapes/:id and /jams/:id — see `appShell.ts` for why
 // these are server-rendered at all.
 //
 // One handler for all three kinds because they're one backend resource: a

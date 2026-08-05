@@ -1,24 +1,13 @@
 {
   "rewrites": [
-    {
-      "source": "/artists/:id",
-      "destination": "/api/artists/:id"
-    },
-    {
-      "source": "/albums/:id",
-      "destination": "/api/albums/:id"
-    },
-    {
-      "source": "/mixtapes/:id",
-      "destination": "/api/mixtapes/:id"
-    },
-    {
-      "source": "/jams/:id",
-      "destination": "/api/jams/:id"
-    },
-    {
-      "source": "/((?!api/).*)",
-      "destination": "/"
-    }
+    { "source": "/go/:slug", "destination": "/api/stickers/go?slug=:slug" },
+    { "source": "/sticker-admin", "destination": "/api/stickers/admin" },
+
+    { "source": "/artists/:id", "destination": "/api/seo?kind=artist&id=:id" },
+    { "source": "/albums/:id", "destination": "/api/seo?kind=collection&id=:id" },
+    { "source": "/mixtapes/:id", "destination": "/api/seo?kind=collection&id=:id" },
+    { "source": "/jams/:id", "destination": "/api/seo?kind=collection&id=:id" },
+
+    { "source": "/((?!api/).*)", "destination": "/" }
   ]
 }

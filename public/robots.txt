@@ -1,4 +1,8 @@
 User-agent: *
 Allow: /
 
+# Sticker QR redirects — every crawl of one is a fake scan in the campaign
+# numbers, and there's nothing here to index: /go/ only ever 302s elsewhere.
+Disallow: /go/
+
 Sitemap: https://slopbop.com/sitemap.xml

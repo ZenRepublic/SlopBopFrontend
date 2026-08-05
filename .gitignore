@@ -25,3 +25,8 @@ dist-ssr
 
 *.env
 .env.*
+
+# Generated QR codes — regenerate with npm run qr
+api/stickers/output/
+.vercel
+.env*
