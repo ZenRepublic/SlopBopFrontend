@@ -33,6 +33,7 @@ import {
 } from '@solana/wallet-adapter-wallets';
 
 import ArtistProfile from './features/artist_profile/ArtistProfile';
+import ImageStudioPage from './features/image_studio/ImageStudioPage';
 import { NavBar } from './components/NavBar';
 import AlbumPage from './features/album/AlbumPage';
 import MixtapePage from './features/mixtape/MixtapePage';
@@ -186,6 +187,10 @@ const router = createBrowserRouter([
       { path: '/map', element: <MapPage /> },
       { path: '/apply', element: <ApplicationForm /> },
       { path: '/artists/:id', element: <ArtistProfile /> },
+      // Owner-only in practice — the page checks `is_owner` and every endpoint
+      // behind it is owner-gated server-side. Under the artist, because it's one
+      // artist's work rather than a place of its own.
+      { path: '/artists/:id/studio', element: <ImageStudioPage /> },
       { path: '/albums/:id', element: <AlbumPage /> },
       { path: '/mixtapes/:id', element: <MixtapePage /> },
       { path: '/jams/:id', element: <JamPage /> },

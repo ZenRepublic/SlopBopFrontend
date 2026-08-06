@@ -108,3 +108,55 @@ export const submitSongRequest = (collectionId: string, payload: SongRequestPayl
  */
 export const submitSignedSongRequest = (collectionId: string, payload: SignedSongRequestPayload) =>
   postSubmission(`/slopbop/collections/${collectionId}/submissions/me`, payload);
+
+/* ------------------------------------------------------------------ *
+ * The queue
+ *
+ * Everything the studio has been asked to make is a request, whoever
+ * asked: a submitted song, an ordered visual, a mixtape. The endpoint
+ * below reads the ones it hasn't finished, which is the only way to know
+ * that something is coming — a render in flight is filed nowhere else
+ * until it lands.
+ * ------------------------------------------------------------------ */
+
+/** What was ordered. Omit it to ask for everything in flight. */
+export type RequestType = 'visual' | 'song' | 'mixtape';
+
+/**
+ * A work order the studio hasn't finished. Its presence is the whole signal:
+ * it appears when the order is accepted and is gone once the studio is done
+ * with it, either way — a failed render leaves no trace anywhere, so an empty
+ * queue means "no longer coming", not "arrived".
+ *
+ * `data` is whatever that type of order carries; a visual's is
+ * `VisualRequestData`. Generic rather than a union, because the shapes of the
+ * other two aren't ours to state until something reads them.
+ */
+export interface PendingRequest<D = unknown> {
+  request_id: string;
+  type: RequestType;
+  /** Where it is in the pipeline, e.g. `in_progress`. Nothing here branches on it. */
+  status: string;
+  created_at: string;
+  available_at: string | null;
+  data: D;
+}
+
+/** The `data` on a visual's order — the prompt it's rendering, and at what shape. */
+export interface VisualRequestData {
+  prompt: string;
+  aspect: string;
+}
+
+/**
+ * What this artist has in flight, newest state of the queue. Owner-gated: 403
+ * covers both someone else's artist and an artist that doesn't exist, so a
+ * stranger can't tell the two apart.
+ *
+ * Cheap and idempotent — built to be polled. There's no push, and nothing else
+ * answers "is it still coming?".
+ */
+export const fetchPendingRequests = <D = unknown>(artistId: string, type?: RequestType) =>
+  apiFetch<{ success: boolean; requests: PendingRequest<D>[] }>(
+    `/slopbop/requests?artist_id=${encodeURIComponent(artistId)}${type ? `&type=${type}` : ''}`,
+  ).then(r => r.requests);

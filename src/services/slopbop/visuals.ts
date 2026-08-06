@@ -81,27 +81,32 @@ interface SaveResponse {
  * its default. Everything an owner makes is the same shape until there's a
  * reason for it not to be, so there's no aspect to pass or to get wrong.
  *
- * `replaces` is a reroll — the draft it names is deleted as part of the same
- * call. Doing it here rather than as a delete followed by a create is what stops
- * the two coming apart: a client that deleted first and then failed to order
- * would have thrown a draft away for nothing.
+ * For another go at an existing draft use `rerollDraft` — it reads the prompt
+ * off the draft, so there is nothing to re-supply.
  *
  * Cheap and repeatable by design: fire it, throw the result away, fire it again.
  * Nothing server-side stops two at once, so the caller owns the one-at-a-time
  * rule (`useImageStudio` holds that guard).
  *
- * 400 = empty prompt or over `MAX_VISUAL_PROMPT`. 403 = not this wallet's
- * artist. 404 = `replaces` isn't a draft of this artist. 409 = it's already saved.
+ * 400 = empty prompt or over `MAX_VISUAL_PROMPT`. 403 = not this wallet's artist.
  */
-export const createVisual = (artistId: string, prompt: string, replaces?: string) =>
+export const createVisual = (artistId: string, prompt: string) =>
   apiFetch<CreateVisualResponse>('/slopbop/visuals', {
     method: 'POST',
-    body: JSON.stringify({
-      artist_id: artistId,
-      prompt,
-      ...(replaces ? { replaces } : {}),
-    }),
+    body: JSON.stringify({ artist_id: artistId, prompt }),
   }).then(r => r.request_id);
+
+/**
+ * Another go at a draft's idea, taking its prompt and aspect from the draft
+ * itself. The old attempt is deleted — a reroll replaces rather than accumulates
+ * — and the server does both in one call, so they can't come apart.
+ *
+ * Drafts only. 409 means it's already saved; be rid of that with `deleteImage`.
+ * 404 means it isn't this artist's draft.
+ */
+export const rerollDraft = (imageId: string) =>
+  apiFetch<CreateVisualResponse>(`/slopbop/images/${imageId}/reroll`, { method: 'POST' })
+    .then(r => r.request_id);
 
 /** Unsaved renders, newest first, bytes included. */
 export const fetchDrafts = (artistId: string) =>
@@ -131,8 +136,7 @@ export const saveDraft = (imageId: string) =>
  * its record — the Arweave copy is permanent and any url already handed out
  * keeps working, so this hides it rather than unpublishing it.
  *
- * Not needed for a reroll: pass `replaces` to `createVisual` instead, which
- * deletes and reorders in one call.
+ * Not needed for a reroll — `rerollDraft` already removes what it replaces.
  */
 export const deleteImage = (imageId: string) =>
   apiFetch<{ success: boolean }>(`/slopbop/images/${imageId}`, { method: 'DELETE' })

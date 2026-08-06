@@ -1,7 +1,9 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { useResource } from './useResource';
+import { useRequestWatch } from './useRequestWatch';
 import {
   createVisual,
+  rerollDraft,
   fetchDrafts,
   fetchImages,
   saveDraft,
@@ -11,53 +13,34 @@ import {
 } from '../services/slopbop';
 
 /**
- * The image creator tab for one artist: the drafts, the saved images, and the
- * three things an owner does with them.
+ * The image studio for one artist: the two lists an owner's renders live in, and
+ * the four things they do with them.
  *
- * One hook rather than a lists hook plus a mutations hook, because both writes
- * change what the lists contain — a render adds a draft, a save moves one from
- * drafts to images — and splitting them would leave the component wiring that
- * handoff by hand.
+ * Drafts are unsaved and 24h-lived; images are the ones kept, on Arweave and
+ * permanent. They're one hook because every write moves something between them —
+ * a render adds a draft, saving moves one across — and splitting them would
+ * leave the page wiring that handoff by hand.
+ *
+ * "Is a render on its way?" is `useRequestWatch`'s problem: it polls the order
+ * queue and tells us when the draft has landed.
  */
 
-/** How often to check whether the render landed. */
-const POLL_MS = 4000;
-
-/**
- * When to stop checking. A failed render is filed nowhere, so nothing will ever
- * arrive to end the wait — without this the tab spins forever on a fault. Long
- * enough to sit behind a song or a video the studio is already working on.
- */
-const GIVE_UP_MS = 5 * 60 * 1000;
-
-const TIMED_OUT = "That render hasn't come back. It may still be queued behind other work — try again.";
+const FAILED = "That render didn't come back. Nothing was saved — try again.";
 
 export function useImageStudio(artistId: string) {
-  const [generating, setGenerating] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  // The guard for one-at-a-time. A ref, not `generating`: two clicks in the same
-  // tick both read the same stale state, and the server enforces nothing.
-  const busy = useRef(false);
-  // The newest draft at the moment we ordered. A different one on top means ours.
-  const baseline = useRef<string | null>(null);
-  const deadline = useRef(0);
 
   const draftsResource = useResource(
     () => fetchDrafts(artistId),
     artistId ? `drafts-${artistId}` : '',
-    {
-      // Only while something is outstanding — an idle tab makes no requests.
-      pollMs: () => (generating ? POLL_MS : undefined),
-      onError: () => setError('Could not load your drafts.'),
-    },
+    { onError: () => setError('Could not load your drafts.') },
   );
 
   const imagesResource = useResource(
     () => fetchImages(artistId),
     artistId ? `images-${artistId}` : '',
-    { onError: () => setError('Could not load your saved images.') },
+    { onError: () => setError('Could not load your gallery.') },
   );
 
   const drafts = draftsResource.data ?? [];
@@ -66,62 +49,61 @@ export function useImageStudio(artistId: string) {
   const { refetch: refetchDrafts } = draftsResource;
   const { refetch: refetchImages } = imagesResource;
 
-  const stopWaiting = useCallback((message?: string) => {
-    busy.current = false;
-    setGenerating(false);
-    if (message) setError(message);
-  }, []);
-
-  // Arrival, or giving up. Runs on every poll result, which is also what paces
-  // the timeout check — there's no separate timer to clean up.
-  useEffect(() => {
-    if (!generating) return;
-    const newest = draftsResource.data?.[0]?.image_id ?? null;
-    if (newest && newest !== baseline.current) {
-      stopWaiting();
-    } else if (Date.now() > deadline.current) {
-      stopWaiting(TIMED_OUT);
-    }
-  }, [draftsResource.data, generating, stopWaiting]);
+  const { waiting, begin, abandon } = useRequestWatch({
+    artistId,
+    type: 'visual',
+    landedIds: draftsResource.data?.map(d => d.image_id) ?? null,
+    refetchLanded: refetchDrafts,
+    onFailed: () => setError(FAILED),
+  });
 
   /**
-   * Order a render. Resolves as soon as the order is accepted — `generating`
-   * stays true until the draft shows up (or the wait times out), which is the
-   * flag the UI should disable the form on.
-   *
-   * A reroll is this with `replaces` set: `create(draft.prompt, draft.image_id)`
-   * drops that attempt as part of ordering its successor. The tab therefore has
-   * no draft to show while it runs — the old one goes when the order is placed,
-   * not when the new one arrives.
-   *
-   * Returns false if it was refused, or dropped because one is already running.
+   * Shared by both doors. `begin` claims the one-at-a-time slot before the
+   * request goes out, so a second press in the same tick is dropped rather than
+   * ordering twice.
    */
-  const create = useCallback(
-    async (prompt: string, replaces?: string): Promise<boolean> => {
-      if (busy.current || !artistId) return false;
-      busy.current = true;
+  const startOrder = useCallback(
+    async (place: () => Promise<unknown>, failure: string): Promise<boolean> => {
+      if (!artistId || !begin()) return false;
       setError(null);
-      baseline.current = draftsResource.data?.[0]?.image_id ?? null;
-      deadline.current = Date.now() + GIVE_UP_MS;
-      setGenerating(true);
       try {
-        await createVisual(artistId, prompt, replaces);
-        // The replaced draft is already gone server-side; show that now rather
-        // than leaving a dead card up for a poll cycle.
-        if (replaces) refetchDrafts();
+        await place();
         return true;
       } catch (err) {
-        stopWaiting(messageFor(err, 'Could not start that render.'));
+        abandon();
+        setError(messageFor(err, failure));
         return false;
       }
     },
-    [artistId, draftsResource.data, refetchDrafts, stopWaiting],
+    [artistId, begin, abandon],
   );
 
   /**
-   * Keep a draft. Several seconds of Arweave upload — cover it with `saving`.
-   * On success the draft leaves the drafts list and joins the images list, so
-   * both are refetched here.
+   * Order a render from a new prompt. Resolves as soon as the order is accepted
+   * — `generating` stays true until the draft shows up, which is the flag the UI
+   * should hide the form's button on.
+   */
+  const create = useCallback(
+    (prompt: string) =>
+      startOrder(() => createVisual(artistId, prompt), 'Could not start that render.'),
+    [artistId, startOrder],
+  );
+
+  /** Another go at a draft, which supplies its own prompt. The old one is deleted. */
+  const reroll = useCallback(
+    (imageId: string) =>
+      startOrder(async () => {
+        await rerollDraft(imageId);
+        // Already gone server-side; show that now rather than leaving a dead
+        // card up for a poll cycle.
+        refetchDrafts();
+      }, 'Could not reroll that draft.'),
+    [refetchDrafts, startOrder],
+  );
+
+  /**
+   * Keep a draft: several seconds of Arweave upload. The draft *becomes* the
+   * image, so it leaves one list and joins the other — both are refetched.
    */
   const save = useCallback(
     async (imageId: string): Promise<string | null> => {
@@ -142,10 +124,7 @@ export function useImageStudio(artistId: string) {
     [saving, refetchDrafts, refetchImages],
   );
 
-  /**
-   * Throw one away without ordering anything. Works on a saved image too, but
-   * that only removes it from the list — Arweave keeps the copy forever.
-   */
+  /** Throw one away. On a saved image this only drops the record — Arweave keeps it. */
   const discard = useCallback(
     async (imageId: string): Promise<boolean> => {
       setError(null);
@@ -161,25 +140,25 @@ export function useImageStudio(artistId: string) {
     [refetchDrafts, refetchImages],
   );
 
-  const refetch = useCallback(() => {
-    refetchDrafts();
-    refetchImages();
-  }, [refetchDrafts, refetchImages]);
-
   return {
     drafts,
+    draftsLoading: draftsResource.loading,
     images,
-    loading: draftsResource.loading || imagesResource.loading,
-    /** True from ordering until the draft lands. Disable the form on it. */
-    generating,
+    imagesLoading: imagesResource.loading,
+    /** True from ordering until the draft lands. */
+    generating: waiting,
     saving,
     error,
     create,
+    reroll,
     save,
     discard,
-    refetch,
+    refetch: refetchDrafts,
   };
 }
+
+/** The whole studio, for the components a page hands it to. */
+export type ImageStudio = ReturnType<typeof useImageStudio>;
 
 function messageFor(err: unknown, fallback: string): string {
   if (err instanceof ApiError) {

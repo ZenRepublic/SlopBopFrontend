@@ -15,7 +15,7 @@ export default function ArtistProfile() {
   // `isOwner` is the server's answer for the session that asked, not a
   // client-side comparison against `owner_id` — the page re-fetches on login
   // because `useArtist` keys its cache on the session.
-  const { artist, isOwner, loading } = useArtist(artistId);
+  const { artist, isOwner, loading, refetch } = useArtist(artistId);
   // An open jam makes the artist "live" — see useLiveJam. It loads
   // alongside the artist rather than gating the page: the profile is worth
   // showing immediately, and the badge and card just appear when it resolves.
@@ -61,7 +61,7 @@ export default function ArtistProfile() {
         </button>
 
         {/* Self-gating — renders nothing unless the session owns this artist. */}
-        <OwnerActions isOwner={isOwner} artistId={artistId} />
+        <OwnerActions isOwner={isOwner} artist={artist} onUpdated={refetch} />
       </div>
 
       {/* Artist info — overlaps the hero image */}
