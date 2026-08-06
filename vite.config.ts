@@ -73,17 +73,25 @@ export default defineConfig({
               /^https:\/\/.*turbo-gateway\.com\/.*/i.test(url.href),
             handler: 'CacheFirst',
             options: {
-              cacheName: 'arweave-images',
+              // -v2: `Img` now requests these with crossorigin, so the old cache
+              // holds opaque entries a CORS request can't use. Renaming drops it
+              // (and with it anything the old [0, 200] rule poisoned).
+              cacheName: 'arweave-images-v2',
               expiration: {
                 maxEntries: 300,             // ~most images a session will ever touch
                 maxAgeSeconds: 60 * 60 * 24 * 60, // 60 days, then re-fetched once
                 purgeOnQuotaError: true,     // evict this cache first if disk fills up
               },
               cacheableResponse: {
-                // 200 = normal; 0 = opaque cross-origin response (the gateway
-                // serves images without CORS headers, so responses are opaque).
-                // Both must be allowed or nothing gets cached.
-                statuses: [0, 200],
+                // 200 only, and that is load-bearing. An opaque response reports
+                // status 0 no matter what really came back, so allowing 0 here
+                // meant a gateway 504 got cached *as the image*, for 60 days —
+                // a blip turned permanent. `Img` sends crossorigin="anonymous"
+                // for this host (it answers `access-control-allow-origin: *`),
+                // which makes responses readable and their statuses honest, so
+                // failures now simply aren't cached. Don't re-add 0 without
+                // taking the crossorigin attribute off too.
+                statuses: [200],
               },
             },
           },

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useMusicPlayer } from '../context/MusicPlayerContext';
 import { useSongBop } from '../hooks/useSongBop';
 import Img from '../primitives/Img';
+import { fetchArweave } from '../config/arweave';
 
 function formatTime(seconds: number): string {
   const mins = Math.floor(seconds / 60);
@@ -74,7 +75,7 @@ export default function MusicPlayer() {
     if (!track || downloading) return;
     setDownloading(true);
     try {
-      const res = await fetch(track.audioUrl);
+      const res = await fetchArweave(track.audioUrl);
       const blob = await res.blob();
       const objectUrl = URL.createObjectURL(blob);
       const a = document.createElement('a');

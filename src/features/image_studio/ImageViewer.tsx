@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Modal } from '../../primitives/Modal';
 import Img from '../../primitives/Img';
 import type { SavedImage } from '../../services/slopbop';
+import { fetchArweave } from '../../config/arweave';
 
 interface Props {
   /** The image being looked at, or null when nothing is. */
@@ -41,7 +42,7 @@ export default function ImageViewer({ image, onClose, onDelete }: Props) {
     if (!shown || downloading) return;
     setDownloading(true);
     try {
-      const res = await fetch(shown.url);
+      const res = await fetchArweave(shown.url);
       const blob = await res.blob();
       const objectUrl = URL.createObjectURL(blob);
       const a = document.createElement('a');
