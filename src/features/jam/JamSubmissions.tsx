@@ -45,8 +45,7 @@ export default function JamSubmissions({ jamId, artistName, status, refresh }: P
 
         <SongWriter
           collectionId={jamId}
-          trackCount={status.track_count}
-          maxTracks={status.max_tracks}
+          status={status}
           refresh={refresh}
         />
       </div>

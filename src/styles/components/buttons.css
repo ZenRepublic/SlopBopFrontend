@@ -138,8 +138,8 @@ button.full-width {
   border: none;
 }
 
-.special-small:hover { background: var(--accent-dim); }
-.special-small:active { transform: scale(0.98); }
+.special-small:hover:not(:disabled) { background: var(--accent-dim); }
+.special-small:active:not(:disabled) { transform: scale(0.98); }
 
 /* Glass — frosted transparent button */
 button.glass {

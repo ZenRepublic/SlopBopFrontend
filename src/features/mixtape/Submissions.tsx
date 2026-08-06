@@ -46,8 +46,7 @@ export default function Submissions({ mixtapeId, artistName, status, songCount, 
         )}
         <SongWriter
           collectionId={mixtapeId}
-          trackCount={status.track_count}
-          maxTracks={status.max_tracks}
+          status={status}
           oncePerDevice
           refresh={refresh}
         />

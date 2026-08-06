@@ -87,7 +87,7 @@ export default function MixtapePage() {
           >
             {artist?.name ?? 'Unknown'}
           </Link>
-          {mixtape.created_at && <> | {formatDate(mixtape.created_at)}</>}
+          {mixtape.released_at && <> | {formatDate(mixtape.released_at)}</>}
         </p>
       </div>
 

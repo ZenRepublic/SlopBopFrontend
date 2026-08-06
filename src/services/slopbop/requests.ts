@@ -35,10 +35,10 @@ export type RequestClosedReason =
   | 'deadline_passed' // past submission_deadline (mixtape only)
   | 'full'      // submission_count reached max_tracks
   | 'not_configured'  // max_tracks never authored
-  // The collection's type takes no submissions at all — i.e. a plain `album`,
-  // which the artist authors rather than crowdsources. The string is the
-  // backend's wire value and is left verbatim despite the rename: nothing here
-  // branches on it, so renaming it frontend-side would only invent a mismatch.
+  // Legacy: the collection's type takes no submissions at all. It used to mean
+  // "this is an album", back when an album took none from anyone; an album now
+  // fills through the signed door, and a closed one reads `full` like the rest.
+  // Kept because it's the backend's wire value and nothing here branches on it.
   | 'not_an_album';
 
 // Discriminated outcome of submit:
@@ -46,13 +46,21 @@ export type RequestClosedReason =
 //   validation → field→message map from a 400 (same shape as the application form)
 //   closed     → the window closed server-side between load and submit (409); the
 //                caller should surface the message and refresh the collection
-// A 404 (collection not found), 500, or network error rejects. The signed door
-// adds no failure of its own: it takes any account, so there's nothing to be
-// refused for beyond the session itself, which `apiFetch` already handles on 401.
+//   forbidden  → this door isn't open to whoever asked (403). On a collection
+//                whose `submitters` is `owner`, that's anyone but the artist —
+//                including a signed-in fan, and including the artist themselves
+//                if they came through the anonymous door.
+// A 404 (collection not found), 500, or network error rejects.
+//
+// 403 is in the union rather than thrown because it's an ordinary answer this
+// endpoint gives, not an exception: leaving it out is what forced an album-only
+// submit hook to exist, wrapping the shared one in a try/catch to catch the one
+// case the union didn't cover.
 export type SongRequestOutcome =
   | { ok: true; data: SongRequestResult }
   | { ok: false; kind: 'validation'; errors: Record<string, string> }
-  | { ok: false; kind: 'closed'; reason: RequestClosedReason; message: string };
+  | { ok: false; kind: 'closed'; reason: RequestClosedReason; message: string }
+  | { ok: false; kind: 'forbidden'; message: string };
 
 // POST a song submission. Shared by both doors, which differ only in their path
 // and their body — the failures are identical.
@@ -92,12 +100,26 @@ async function postSubmission(
           message: err.body?.error || 'Song submissions are closed for this collection',
         };
       }
+      if (err.status === 403) {
+        return {
+          ok: false,
+          kind: 'forbidden',
+          message: (err.body?.error as string) || 'Only the artist can add to this collection',
+        };
+      }
     }
     throw err;
   }
 }
 
-/** The anonymous door: the typed name is the credit. */
+/**
+ * The anonymous door: the typed name is the credit.
+ *
+ * Only for collections whose `submitters` is `anyone` — an owner-only one 403s
+ * here even for its own artist, since this door proves nothing about who's
+ * knocking. `useSubmitSongRequest` reads that field and never picks this door
+ * when it says otherwise.
+ */
 export const submitSongRequest = (collectionId: string, payload: SongRequestPayload) =>
   postSubmission(`/slopbop/collections/${collectionId}/submissions`, payload);
 
@@ -105,6 +127,9 @@ export const submitSongRequest = (collectionId: string, payload: SongRequestPayl
  * The signed door, for anyone with an account. `apiFetch` attaches the bearer
  * token on its own, so the path is the only difference: the server credits the
  * account it just verified instead of reading a name off the body.
+ *
+ * Also the door an album fills through — it's the only one that can prove the
+ * submitter is the artist — which is the one case that answers `forbidden`.
  */
 export const submitSignedSongRequest = (collectionId: string, payload: SignedSongRequestPayload) =>
   postSubmission(`/slopbop/collections/${collectionId}/submissions/me`, payload);

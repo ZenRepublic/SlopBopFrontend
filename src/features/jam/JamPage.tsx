@@ -95,7 +95,7 @@ export default function JamPage() {
           >
             {artist?.name ?? 'Unknown'}
           </Link>
-          {jam.created_at && <> | {formatDate(jam.created_at)}</>}
+          {jam.released_at && <> | {formatDate(jam.released_at)}</>}
         </p>
       </div>
 

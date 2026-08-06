@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Modal } from '../../../primitives/Modal';
 import StudioHome from './studio/StudioHome';
 import JamCreator from './studio/JamCreator';
+import AlbumCreator from './studio/AlbumCreator';
 
 interface Props {
   open: boolean;
@@ -24,7 +25,7 @@ interface Props {
  */
 
 /** Which tool is open. `home` is the menu. */
-export type StudioPage = 'home' | 'jam';
+export type StudioPage = 'home' | 'jam' | 'album';
 
 /**
  * The heading each page wears, and the modal's accessible name while it's up.
@@ -33,6 +34,7 @@ export type StudioPage = 'home' | 'jam';
 const TITLES: Record<StudioPage, string> = {
   home: 'Creator Studio',
   jam: 'Jam Creator',
+  album: 'Album Creator',
 };
 
 export default function CreatorStudio({ open, onClose, artistId }: Props) {
@@ -56,6 +58,7 @@ export default function CreatorStudio({ open, onClose, artistId }: Props) {
 
         {page === 'home' && <StudioHome onOpen={setPage} />}
         {page === 'jam' && <JamCreator artistId={artistId} onDone={onClose} />}
+        {page === 'album' && <AlbumCreator artistId={artistId} onDone={onClose} />}
       </div>
     </Modal>
   );

@@ -1,4 +1,5 @@
 import { useState, useRef, useLayoutEffect } from 'react';
+import type { RequestStatus } from '../../services/slopbop';
 import { useSubmitSongRequest } from '../../hooks/useSubmitSongRequest';
 import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../context/AuthContext';
@@ -46,14 +47,14 @@ function markSubmitted(collectionId: string) {
 }
 
 interface Props {
-  /** The collection (mixtape or jam) this submission is written against. */
+  /** The collection this submission is written against. */
   collectionId: string;
-  /** Submissions received so far — the numerator of the count header. */
-  trackCount: number;
-  /** Capacity — the denominator of the count header. Null when the collection
-   *  was never given one, in which case the header shows the count alone rather
-   *  than a fraction with a hole in it. */
-  maxTracks: number | null;
+  /** The collection's evaluated submission window — the count header's numbers
+   *  (`max_tracks` null means it was never given a capacity, so the header shows
+   *  the count alone rather than a fraction with a hole in it), and `submitters`,
+   *  which decides which door the submission goes through. Whether the writer
+   *  shows at all is still the caller's call — see the managers. */
+  status: RequestStatus;
   /** Cap this device at one submission for this collection: on success the
    * writer gives way to the thank-you notice, and stays that way on return
    * visits. Off by default — it takes as many submissions as the collection has
@@ -92,20 +93,23 @@ interface Props {
  */
 export default function SongWriter({
   collectionId,
-  trackCount,
-  maxTracks,
+  status,
   oncePerDevice = false,
   refresh,
 }: Props) {
+  const { track_count: trackCount, max_tracks: maxTracks } = status;
   const [submitted, setSubmitted] = useState(
     () => oncePerDevice && !!getSubmittedCollections()[collectionId],
   );
-  const { submit, submitting, fieldErrors } = useSubmitSongRequest();
+  const { submit, submitting, fieldErrors } = useSubmitSongRequest(status);
   const { showToast } = useToast();
-  // Signing in replaces the signature slot: the account IS the credit, so there
-  // is nothing to type and nothing a typed name could add. The hook posts through
-  // the matching door off the same flag, so the two can't drift apart.
   const { isAuthed } = useAuth();
+  // Whether there's a name to type. Signing in replaces the signature slot — the
+  // account IS the credit, so a typed name could add nothing — and an owner-only
+  // collection never has one either, since it always posts signed. Same two
+  // facts the hook picks the door from, so the slot and the request can't drift
+  // apart about who's submitting.
+  const signature = status.submitters === 'anyone' && !isAuthed;
 
   const [author, setAuthor] = useState('');
   const [page, setPage] = useState(blankPage);
@@ -199,7 +203,7 @@ export default function SongWriter({
 
   const remaining = WRITABLE_MAX - contentLength(page);
 
-  const authorValid = isAuthed || (author.trim().length > 0 && author.length <= AUTHOR_MAX);
+  const authorValid = !signature || (author.trim().length > 0 && author.length <= AUTHOR_MAX);
   const textValid = text.trim().length > 0 && text.length <= TEXT_MAX;
   const allValid = authorValid && textValid;
 
@@ -221,6 +225,12 @@ export default function SongWriter({
       } else if (outcome.kind === 'closed') {
         // Window closed between load and submit — tell the user and refresh so
         // the writer gives way to the closed notice.
+        showToast(outcome.message, 'warning');
+        refresh();
+      } else if (outcome.kind === 'forbidden') {
+        // This door isn't theirs — an owner-only collection, and the wallet
+        // isn't the artist's. The writer shouldn't have been rendered, so
+        // refresh: whatever said it should is out of date.
         showToast(outcome.message, 'warning');
         refresh();
       } else {
@@ -293,7 +303,7 @@ export default function SongWriter({
           </div>
           {fieldErrors.text && <p className="songwriter__error">{fieldErrors.text}</p>}
 
-          {!isAuthed && (
+          {signature && (
             <>
               <label className={`songwriter__author${fieldErrors.author ? ' error' : ''}`}>
                 <span className="songwriter__author-label">written by</span>

@@ -79,7 +79,7 @@ export default function AlbumPage() {
           >
             {artist?.name ?? 'Unknown'}
           </Link>
-          {album.created_at && <> | {formatDate(album.created_at)}</>}
+          {album.released_at && <> | {formatDate(album.released_at)}</>}
         </p>
       </div>
 

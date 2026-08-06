@@ -9,6 +9,7 @@ export * from './slopbop/client';
 export * from './slopbop/artists';
 export * from './slopbop/collections';
 export * from './slopbop/jams';
+export * from './slopbop/albums';
 export * from './slopbop/songs';
 export * from './slopbop/credit';
 export * from './slopbop/sim';

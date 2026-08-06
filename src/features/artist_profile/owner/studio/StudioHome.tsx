@@ -8,10 +8,10 @@ interface Props {
 /**
  * The studio's front page: the menu of everything an owner can make.
  *
- * Album and Mixtape are deliberately present and disabled rather than absent —
- * the owner should be able to see what the label makes and what isn't ready yet,
- * instead of wondering where it went. An entry becomes real by gaining an
- * `onClick`, which is also what a missing one can't be given by accident.
+ * Mixtape is deliberately present and disabled rather than absent — the owner
+ * should be able to see what the label makes and what isn't ready yet, instead
+ * of wondering where it went. An entry becomes real by gaining an `onClick`,
+ * which is also what a missing one can't be given by accident.
  *
  * Images aren't here: the image studio is a page of its own, reached from the
  * artist's own header. A menu of things this modal builds shouldn't hold one
@@ -29,7 +29,11 @@ export default function StudioHome({ onOpen }: Props) {
           hint="Your fans write it. One song survives."
           onClick={() => onOpen('jam')}
         />
-        <StudioOption label="Album" hint="Coming soon" />
+        <StudioOption
+          label="Album"
+          hint="Yours to write. Releases once it's full."
+          onClick={() => onOpen('album')}
+        />
         <StudioOption label="Mixtape" hint="Coming soon" />
       </div>
     </>
