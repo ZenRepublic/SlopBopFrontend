@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import { useArtists } from '../../hooks/useArtists';
 import { ArtistCard } from '../../components/ArtistCard';
 
@@ -12,6 +13,7 @@ const FACETS: { emoji: string; label: string; color: string }[] = [
 
 export default function RosterPage() {
   const { artists, loading } = useArtists();
+  const navigate = useNavigate();
 
   return (
     <div className="flex flex-col">
@@ -41,11 +43,23 @@ export default function RosterPage() {
           <div className="spinner large processing" />
         </div>
       ) : (
-        <div className="flex flex-col border-t border-border">
+        <div className="flex flex-col gap-lg border-t border-border pt-lg">
           {artists.map(artist => (
             <ArtistCard key={artist.artist_id} artist={artist} />
           ))}
-          <p className="text-center subtle text-sm py-lg">More artists coming soon</p>
+          {/* The end of the roster is the moment of highest intent — someone
+              who scrolled every artist has just spent real attention on the
+              thing they'd be applying to become. */}
+          <div className="px-md pb-2xl">
+            <div className="frosted-card !p-xl flex flex-col items-center gap-lg text-center">
+              <p className="text-base leading-relaxed">
+                Want to become a synthetic artist?
+              </p>
+              <button type="button" className="secondary" onClick={() => navigate('/apply')}>
+                APPLY NOW
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

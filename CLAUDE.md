@@ -10,7 +10,9 @@ Nav is **About · Roster · Mixtape · Account**. About (`/`) states the label's
 
 Sold as *Mixtape* in the nav, named *commission* in code and URL, because `features/mixtape/` is already the mixtape a group **receives** (`/mixtapes/:id`).
 
-**Map (`/map`)** and **Apply (`/apply`)** are hidden from the nav but fully routed — deferred, not removed. Their context is parked in `SIMULATION.md`; un-hiding either is an edit to `TABS` in `components/NavBar.tsx`.
+**Apply (`/apply`)** is live but has no tab of its own — it's reached from the CTA at the end of the Roster, where someone has just scrolled every artist. Nav is full at four entries (430px), and a fifth would dilute the Mixtape push.
+
+**Map (`/map`)** is hidden from the nav but fully routed — deferred, not removed. Its context is parked in `SIMULATION.md`; un-hiding it is an edit to `TABS` in `components/NavBar.tsx`.
 
 ## Stack
 

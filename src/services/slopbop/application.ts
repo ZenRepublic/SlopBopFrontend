@@ -1,48 +1,45 @@
 import { API_URL, apiFetch } from './client';
 
 // Static form data, served from memory by the backend. Fetch once on mount and
-// cache — Tiers 2–4 are rendered entirely from this.
+// cache — every step of the form is rendered from this.
 export interface FormConfig {
-  scale: string[];          // Likert statements, in source order (weights are server-side only)
-  open_questions: string[]; // exactly 4 audition questions, one randomized per bucket server-side
-  zodiac: string[];         // 12 signs for the dropdown
-  genres: {                 // multi-select options + how many may be picked
+  scale: string[];                  // Likert statements, in source order (weights are server-side only)
+  personality_questions: string[];  // exactly 4 — who you are
+  craft_questions: string[];        // exactly 4 — what your music is
+  zodiac: string[];                 // 12 signs for the dropdown
+  genres: {                         // multi-select options + how many may be picked
     max_select: number;
     options: string[];
   };
 }
 
-// One filled-in audition answer. `question` is the full text that was asked
-// (the source of truth), sent back alongside the user's answer.
-export interface AuditionAnswer {
-  question: string;
-  answer: string; // 1–300 chars
-}
-
 // Everything the form collects. Wire format is snake_case; the backend is the
 // trust boundary, so these mirror its validation rules in the comments only.
+//
+// The answer arrays are plain strings *in config order* — the server pairs each
+// one to its question by position and stamps the question text itself. Sending
+// {question, answer} objects is rejected as "must be text".
 export interface ApplicationPayload {
-  name: string;                // 1–32 chars, [a-zA-Z0-9_-] only
+  name: string;                  // 1–32 chars, letters/numbers/space/_/- only
   gender: 'male' | 'female';
-  bio: string;                 // 1–140 chars
-  scale_answers: number[];     // exactly config.scale.length ints, each 1–5, in source order
-  audition_answers: AuditionAnswer[]; // exactly 4
-  zodiac_sign: string;         // one of config.zodiac
-  genres: string[];            // exactly 3 distinct, each from config.genres
-  favorite_singer: string;     // 1–32 chars
-  twitter?: string | null;     // optional; leading @ stripped server-side; [a-zA-Z0-9_], <=32
-  email?: string | null;       // optional; standard email, <=100
+  scale_answers: number[];       // exactly config.scale.length ints, each 1–5, in source order
+  personality_answers: string[]; // exactly 4, each 1–300 chars, in config.personality_questions order
+  craft_answers: string[];       // exactly 4, each 1–300 chars, in config.craft_questions order
+  zodiac_sign: string;           // one of config.zodiac
+  genres: string[];              // 1..config.genres.max_select distinct, each from config.genres.options
+  email?: string | null;         // optional; standard email, <=100
 }
 
-// Returned on a successful 201. `archetype` is the derived personality result —
-// show it on the thank-you screen. `scale_answers` are never returned.
+// Returned on a successful 201. `archetype` is the derived personality result
+// (12 possible values). `scale_answers` are never returned.
 export interface ApplicationResult {
   name: string;
   archetype: string;
 }
 
 // Discriminated outcome of submit: success carries the result, validation
-// failure carries the field→message map. A 500 (or network error) rejects.
+// failure carries the field→message map (keyed by payload field name, every
+// failing field in one pass). A 500 (or network error) rejects.
 export type SubmitOutcome =
   | { ok: true; data: ApplicationResult }
   | { ok: false; errors: Record<string, string> };

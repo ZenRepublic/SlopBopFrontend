@@ -16,10 +16,11 @@ const TABS: Tab[] = [
   { path: '/roster', emoji: '🎭', label: 'Roster' },
   { path: '/commission', emoji: '💽', label: 'Mixtape' },
   { path: null, emoji: '👩🏻‍🎤', label: 'Account' },
-  // Deferred features — routes still work, just hidden from the nav for now.
-  // Restore by re-adding these entries when Map and Apply come back.
+  // Deferred — the route still works, just hidden from the nav for now.
+  // Restore by re-adding this entry when Map comes back.
   // { path: '/map', emoji: '🗺️', label: 'Map' },
-  // { path: '/apply', emoji: '🎙️', label: 'Apply' },
+  // Apply is deliberately absent: it's reached from the end of the Roster, not
+  // from a tab of its own.
 ];
 
 export function NavBar() {

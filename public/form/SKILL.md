@@ -48,40 +48,39 @@ The response tells you exactly what to fill in and the allowed values:
 
 ```jsonc
 {
-  "scale": ["statement 1", "statement 2", ...],   // personality statements (see Step 2.5)
-  "open_questions": ["q1", "q2", "q3", "q4"],      // 4 audition questions, answer all (see Step 2.6)
-  "zodiac": ["Aries", "Taurus", ...],              // pick exactly one
+  "scale": ["statement 1", "statement 2", ...],       // personality statements (see Step 2.5)
+  "personality_questions": ["q1", "q2", "q3", "q4"],  // who your owner is (see Step 2.6)
+  "craft_questions": ["q1", "q2", "q3", "q4"],        // what their music is (see Step 2.6)
+  "zodiac": ["Aries", "Taurus", ...],                 // pick exactly one
   "genres": {
-    "max_select": 3,                                // how many genres you may pick
-    "options": ["Pop", "Hip-Hop", ...]              // pick from these
+    "max_select": 3,                                   // how many genres you may pick
+    "options": ["Pop", "Hip-Hop", ...]                 // pick from these
   }
 }
 ```
 
-Read it fresh each time — the `scale` statements, `open_questions`, `zodiac`
-list, and `genres` are the source of truth for what's valid.
+Read it fresh each time — the `scale` statements, the two question arrays, the
+`zodiac` list, and `genres` are the source of truth for what's valid.
 
 ## Step 2 — Compose the answers
 
 Build a JSON object with these fields. Stay within every limit; the backend
 re-validates and will reject anything out of bounds.
 
-| Field             | Rule                                                                 |
-|-------------------|----------------------------------------------------------------------|
-| `name`            | Stage name, 1–32 chars, only letters/numbers/space/`_`/`-`.          |
-| `gender`          | `"male"` or `"female"`.                                              |
-| `bio`             | 1–140 chars. A line or two capturing your owner as an artist.        |
-| `zodiac_sign`     | Exactly one value from `config.zodiac`.                              |
-| `genres`          | 1 to `max_select` distinct values from `config.genres.options`.      |
-| `favorite_singer` | 1–32 chars. Your owner's favorite artist.                           |
-| `scale_answers`   | Array of ints (see 2.5).                                            |
-| `audition_answers`| Array of 4 `{question, answer}` (see 2.6).                          |
-| `twitter`         | Optional. X handle, no `@`, letters/numbers/`_`, ≤32 chars, or null. |
-| `email`           | Optional. Standard email, ≤100 chars, or null.                      |
+| Field                   | Rule                                                            |
+|-------------------------|-----------------------------------------------------------------|
+| `name`                  | Stage name, 1–32 chars, only letters/numbers/space/`_`/`-`.     |
+| `gender`                | `"male"` or `"female"`.                                         |
+| `zodiac_sign`           | Exactly one value from `config.zodiac`.                         |
+| `genres`                | 1 to `max_select` distinct values from `config.genres.options`. |
+| `scale_answers`         | Array of ints (see 2.5).                                        |
+| `personality_answers`   | Array of 4 plain strings (see 2.6).                             |
+| `craft_answers`         | Array of 4 plain strings (see 2.6).                             |
+| `email`                 | Optional. Standard email, ≤100 chars, or null/omitted.          |
 
-**Contact (`twitter` / `email`):** selected applicants are notified through the
-contact they provide, so include at least one **real** contact for your owner.
-If you don't know it, ask your owner before submitting rather than guessing.
+**Contact (`email`):** selected applicants are notified through the contact they
+provide, so include a **real** email for your owner. If you don't know it, ask
+your owner before submitting rather than guessing.
 
 ### Step 2.5 — The personality scale (`scale_answers`)
 
@@ -100,23 +99,26 @@ Example: if `config.scale` has 3 statements and your owner would strongly agree
 with the first, be neutral on the second, and disagree with the third →
 `scale_answers: [5, 3, 2]`.
 
-### Step 2.6 — The audition questions (`audition_answers`)
+### Step 2.6 — The open questions (`personality_answers`, `craft_answers`)
 
-`config.open_questions` is an array of exactly 4 questions. Answer **all four**,
-in your owner's voice. For each, produce an object pairing the exact question
-text with your answer:
+There are two sets of 4 questions. `config.personality_questions` asks who your
+owner is; `config.craft_questions` asks what their music is. Answer **all eight**,
+in your owner's voice.
+
+Each answer array is **plain strings, in the same order as its question array** —
+`personality_answers[0]` answers `personality_questions[0]`, and so on. The
+server pairs them by position and records the question text itself.
 
 ```jsonc
-"audition_answers": [
-  { "question": "<config.open_questions[0]>", "answer": "..." },
-  { "question": "<config.open_questions[1]>", "answer": "..." },
-  { "question": "<config.open_questions[2]>", "answer": "..." },
-  { "question": "<config.open_questions[3]>", "answer": "..." }
-]
+"personality_answers": ["answer to q1", "answer to q2", "answer to q3", "answer to q4"],
+"craft_answers":       ["answer to q1", "answer to q2", "answer to q3", "answer to q4"]
 ```
 
-Each `answer` is 1–300 chars. These answers strongly shape the artist's
-personality, so make them specific and characterful.
+> **Do not send `{"question": ..., "answer": ...}` objects** — they are rejected
+> with "must be text". Strings only, one per question, in config order.
+
+Each answer is 1–300 chars. These answers strongly shape the artist, so make
+them specific and characterful.
 
 ### Full payload example
 
@@ -124,19 +126,22 @@ personality, so make them specific and characterful.
 {
   "name": "neon_kid",
   "gender": "female",
-  "bio": "Bedroom-pop dreamer who turns 3am thoughts into synth hooks.",
   "scale_answers": [5, 2, 4, 3, 5],
-  "audition_answers": [
-    { "question": "What's the dream you're chasing?", "answer": "..." },
-    { "question": "Describe the room where you make music.", "answer": "..." },
-    { "question": "What moves you when you create?", "answer": "..." },
-    { "question": "What's your absolute deal-breaker?", "answer": "..." }
+  "personality_answers": [
+    "I'm the one who stays up after everyone leaves the party.",
+    "...",
+    "...",
+    "..."
+  ],
+  "craft_answers": [
+    "Synths that sound like a bus window at 3am.",
+    "...",
+    "...",
+    "..."
   ],
   "zodiac_sign": "Pisces",
   "genres": ["Pop", "Synthwave", "Indie"],
-  "favorite_singer": "Kanye West",
-  "twitter": "neon_kid",
-  "email": null
+  "email": "neon.kid@example.com"
 }
 ```
 

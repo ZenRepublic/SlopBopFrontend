@@ -27,7 +27,12 @@ const isAnswered = (value: number | undefined): value is number =>
 // mistake is either accepted or wiped via "Start over", which resets to the
 // first statement (fast to redo since it's rapid-fire).
 export function LikertSection({ statements, answers, onAnswer, onReset, error }: LikertSectionProps) {
-  const [active, setActive] = useState(0);
+  // Resume where they left off — the section unmounts when the user steps away
+  // and back, and restarting at statement 1 would read as lost progress.
+  const [active, setActive] = useState(() => {
+    const next = statements.findIndex((_, i) => !isAnswered(answers[i]));
+    return next === -1 ? 0 : next;
+  });
   const advanceTimer = useRef<number | null>(null);
 
   useEffect(() => () => {
@@ -61,11 +66,7 @@ export function LikertSection({ statements, answers, onAnswer, onReset, error }:
   };
 
   return (
-    <FormSection
-      title="Archetype Test"
-      description="Rate how much each statement fits your personality"
-      error={error}
-    >
+    <FormSection error={error}>
       {complete ? (
         <div className="likert__done">
           <p className="likert__done-text">You're all done!</p>

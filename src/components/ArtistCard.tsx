@@ -11,7 +11,7 @@ export function ArtistCard({ artist }: { artist: Artist }) {
   const { play } = useMusicPlayer();
 
   return (
-    <div className="w-full border-b border-border last:border-b-0">
+    <div className="w-full">
       <Link
         to={`/artists/${artist.artist_id}`}
         className="block w-full active:opacity-70 transition-opacity"

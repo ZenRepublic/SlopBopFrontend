@@ -33,12 +33,20 @@ label.required::after {
   font-weight: var(--font-weight-normal);
 }
 
-/* Prominent label — the label is the focus (a question or statement) */
+/* Prominent label — the label is the focus (a question or statement). Centered
+   and height-reserved to match .likert__statement, so a stepped questionnaire
+   reads the same either way and doesn't jump between questions of differing
+   length. */
 .field-label--lg {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 3.5em;
   font-size: var(--font-size-lg);
   font-weight: var(--font-weight-semibold);
   line-height: var(--heading-h2-line-height);
   color: var(--text-primary);
+  text-align: center;
 }
 
 /* Input Base */

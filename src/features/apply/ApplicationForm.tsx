@@ -1,112 +1,141 @@
-import { useState } from 'react';
-import {
-  Field,
-  FormSection,
-  TextField,
-  TextAreaField,
-  ButtonGroup,
-  Dropdown,
-  MultiSelect,
-  type ButtonGroupOption,
-} from '../../primitives/form';
-import { AuditionSection } from './AuditionSection';
+import { useEffect, useState } from 'react';
+import { IdentityStep } from './IdentityStep';
+import { EssaySection } from './EssaySection';
 import { LikertSection } from './LikertSection';
-import { toZodiacOptions } from './zodiac';
+import {
+  ESSAY_MAX,
+  validateEssays,
+  validateIdentity,
+  validateScale,
+  type FieldErrors,
+  type FormState,
+} from './validation';
 import { useFormConfig } from '../../hooks/useFormConfig';
 import { useSubmitApplication } from '../../hooks/useSubmitApplication';
 import { useToast } from '../../context/ToastContext';
 import { type ApplicationPayload } from '../../services/slopbop';
 
-// Field length caps, mirroring the backend's validation rules.
-const NICKNAME_MAX = 32;
-const BIO_MAX = 140;
-const SINGER_MAX = 32;
-const AUDITION_MAX = 300;
-const X_HANDLE_MAX = 32;
-const EMAIL_MAX = 100;
+// The step name in the progress line is the only heading a step gets — the
+// cards hold nothing but their fields.
+const STEPS = ['Identity', 'Archetype Test', 'Personality', 'Craft'] as const;
 
-// Allowed-character / format rules, mirroring the backend. Nickname is a stage
-// name, so spaces are allowed (the backend trims leading/trailing).
-const NICKNAME_RE = /^[a-zA-Z0-9 _-]+$/;
-const X_HANDLE_RE = /^[a-zA-Z0-9_]+$/;
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+// Which step owns each payload field, so a 400 can drop the user on the step
+// that needs fixing. Keys match the backend's error keys exactly.
+const FIELD_STEP: Record<string, number> = {
+  name: 0,
+  gender: 0,
+  zodiac_sign: 0,
+  genres: 0,
+  email: 0,
+  scale_answers: 1,
+  personality_answers: 2,
+  craft_answers: 3,
+};
 
-type Gender = 'male' | 'female';
-
-const GENDER_OPTIONS: ButtonGroupOption<Gender>[] = [
-  { value: 'male', label: 'Male' },
-  { value: 'female', label: 'Female' },
-];
+const EMPTY_STATE: FormState = {
+  name: '',
+  gender: null,
+  zodiac: null,
+  genres: [],
+  email: '',
+  scale: {},
+  personality: ['', '', '', ''],
+  craft: ['', '', '', ''],
+};
 
 export default function ApplicationForm() {
   const { config, loading, error } = useFormConfig();
   const { submit, submitting, fieldErrors, result } = useSubmitApplication();
   const { showToast } = useToast();
 
-  const [nickname, setNickname] = useState('');
-  const [bio, setBio] = useState('');
-  const [gender, setGender] = useState<Gender | null>(null);
-  const [zodiac, setZodiac] = useState<string | null>(null);
-  const [favoriteSinger, setFavoriteSinger] = useState('');
-  const [auditionAnswers, setAuditionAnswers] = useState(['', '', '', '']);
-  const [favoriteGenres, setFavoriteGenres] = useState<string[]>([]);
-  const [xHandle, setXHandle] = useState('');
-  const [email, setEmail] = useState('');
-  const [scaleAnswers, setScaleAnswers] = useState<Record<number, number>>({});
+  const [state, setState] = useState<FormState>(EMPTY_STATE);
+  const [step, setStep] = useState(0);
+  // Steps whose Next (or Apply) has been pressed — errors stay hidden until
+  // then, so a step doesn't open covered in red.
+  const [attempted, setAttempted] = useState<boolean[]>(() => STEPS.map(() => false));
+  // A server error describes the payload that was sent; the moment anything is
+  // edited it's stale and stops being shown. The client mirror covers the same
+  // rules in the meantime.
+  const [serverErrorsStale, setServerErrorsStale] = useState(false);
 
-  // The 4 audition questions (one per bucket) come pre-randomized from the
-  // backend; just answer them in order.
-  const auditionQuestions = config?.open_questions ?? null;
+  const edit = (updater: (prev: FormState) => FormState) => {
+    setState(updater);
+    setServerErrorsStale(true);
+  };
 
-  const setAnswer = (index: number, value: string) =>
-    setAuditionAnswers(prev => prev.map((a, i) => (i === index ? value : a)));
+  const patch = (fields: Partial<FormState>) => edit(prev => ({ ...prev, ...fields }));
 
   const setScaleAnswer = (index: number, value: number) =>
-    setScaleAnswers(prev => ({ ...prev, [index]: value }));
-  const resetScale = () => setScaleAnswers({});
+    edit(prev => ({ ...prev, scale: { ...prev.scale, [index]: value } }));
+  const resetScale = () => patch({ scale: {} });
 
-  // Per-field validity. Optional fields are valid when blank; a non-blank but
-  // malformed optional field is invalid and blocks submission.
-  const nicknameValid = NICKNAME_RE.test(nickname) && nickname.length <= NICKNAME_MAX;
-  const bioValid = bio.trim().length > 0 && bio.length <= BIO_MAX;
-  const genderValid = gender !== null;
-  const zodiacValid = zodiac !== null;
-  const singerValid = favoriteSinger.trim().length > 0 && favoriteSinger.length <= SINGER_MAX;
-  // Required → at least one; the upper bound is enforced by the MultiSelect.
-  const genresValid = favoriteGenres.length > 0;
-  // Per-question completion drives the step buttons; the tier is valid only
-  // once every question is complete.
-  const auditionComplete = auditionAnswers.map(a => a.trim().length > 0 && a.length <= AUDITION_MAX);
-  const auditionValid = !!auditionQuestions && auditionComplete.every(Boolean);
-  const xHandleValid = xHandle === '' || (xHandle.length <= X_HANDLE_MAX && X_HANDLE_RE.test(xHandle));
-  const emailValid = email === '' || (email.length <= EMAIL_MAX && EMAIL_RE.test(email));
-  // Every statement answered with a 1–5 value.
-  const scaleValid = !!config && config.scale.every((_, i) => {
-    const v = scaleAnswers[i];
-    return v >= 1 && v <= 5;
+  const setEssayAnswer = (kind: 'personality' | 'craft', index: number, value: string) =>
+    edit(prev => ({
+      ...prev,
+      [kind]: prev[kind].map((a, i) => (i === index ? value : a)),
+    }));
+
+  // Client-side mirror of the backend's rules, per step. Server errors are
+  // layered on top — they're the authoritative answer for the same keys.
+  const stepErrors: FieldErrors[] = config
+    ? [
+        validateIdentity(state, config),
+        validateScale(state, config),
+        validateEssays(state.personality, config.personality_questions, 'personality'),
+        validateEssays(state.craft, config.craft_questions, 'craft'),
+      ]
+    : STEPS.map(() => ({}));
+
+  const shown = (index: number): FieldErrors => ({
+    ...(attempted[index] ? stepErrors[index] : {}),
+    ...(serverErrorsStale ? {} : fieldErrors),
   });
 
-  const allValid =
-    nicknameValid && bioValid && genderValid && zodiacValid &&
-    singerValid && genresValid && scaleValid && auditionValid && xHandleValid && emailValid;
+  // A 400 means the client checks and the server disagreed; go to where the
+  // disagreement is rather than leaving the user on the last step.
+  useEffect(() => {
+    setServerErrorsStale(false);
+    const keys = Object.keys(fieldErrors);
+    if (keys.length === 0) return;
+    const target = Math.min(...keys.map(key => FIELD_STEP[key] ?? STEPS.length - 1));
+    setAttempted(prev => prev.map((was, i) => was || i === target));
+    setStep(target);
+  }, [fieldErrors]);
+
+  const markAttempted = (index: number) =>
+    setAttempted(prev => prev.map((was, i) => (i === index ? true : was)));
+
+  function next() {
+    markAttempted(step);
+    if (Object.keys(stepErrors[step]).length > 0) return;
+    setStep(s => Math.min(STEPS.length - 1, s + 1));
+  }
 
   async function handleApply() {
-    if (!allValid || !config || !gender || !zodiac || !auditionQuestions) return;
+    setAttempted(STEPS.map(() => true));
+    if (!config) return;
+
+    // Land on the step that needs fixing rather than failing silently on the
+    // last one. The gender/zodiac guard after it is type narrowing — those two
+    // are already covered by the Identity step's errors.
+    const firstInvalid = stepErrors.findIndex(errors => Object.keys(errors).length > 0);
+    if (firstInvalid !== -1) {
+      setStep(firstInvalid);
+      return;
+    }
+    if (!state.gender || !state.zodiac) return;
 
     const payload: ApplicationPayload = {
-      name: nickname,
-      gender,
-      bio,
-      scale_answers: config.scale.map((_, i) => scaleAnswers[i]),
-      audition_answers: auditionQuestions.map((question, i) => ({
-        question,
-        answer: auditionAnswers[i],
-      })),
-      zodiac_sign: zodiac,
-      genres: favoriteGenres,
-      favorite_singer: favoriteSinger,
-      twitter: xHandle || null,
-      email: email || null,
+      name: state.name.trim(),
+      gender: state.gender,
+      // Every answer array is built by mapping the config, so position is the
+      // config's order — never state's iteration order.
+      scale_answers: config.scale.map((_, i) => state.scale[i]),
+      personality_answers: config.personality_questions.map((_, i) => state.personality[i].trim()),
+      craft_answers: config.craft_questions.map((_, i) => state.craft[i].trim()),
+      zodiac_sign: state.zodiac,
+      genres: state.genres,
+      email: state.email.trim() || null,
     };
 
     try {
@@ -137,151 +166,111 @@ export default function ApplicationForm() {
     return <p className="text-center py-4xl">Loading form…</p>;
   }
   if (error || !config) {
-    return <p className="text-center text-error py-4xl">{error ?? 'Failed to load form'}</p>;
+    return <p className="text-center text-danger py-4xl">{error ?? 'Failed to load form'}</p>;
   }
+
+  const isLast = step === STEPS.length - 1;
 
   return (
     <div className="flex flex-col gap-xl py-lg px-md">
       <header className="flex flex-col gap-sm">
-        <h1 className="font-display text-xl">Application Form</h1>
+        <h1 className="font-display text-xl">Become an Artist</h1>
         <p className="text-sm leading-relaxed">
-          Apply for a chance to become a synthetic artist inside slopbop show. Feel free to answer either truthfully or roleplay as a character from your imagination!
-        </p>
-        <p className="text-sm leading-relaxed">
-          Got an AI assistant? They can fill it up for you!
-          <br />
-          Tell them to read this page:{' '}
-          <a
-            href="https://www.slopbop.com/form/SKILL.md"
-            className="text-accent underline"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            slopbop.com/form/SKILL.md
-          </a>
+          Fill out the application form below for a chance to become a signed synthetic artist at the Slopbop Music Label!
         </p>
       </header>
 
+      <div className="flex flex-col gap-sm">
+        <div className="flex gap-xs" aria-hidden="true">
+          {STEPS.map((label, i) => (
+            <div
+              key={label}
+              className={`h-1 flex-1 rounded-sm ${i <= step ? 'bg-accent' : 'bg-border'}`}
+            />
+          ))}
+        </div>
+        <p className="text-sm">
+          Step {step + 1} of {STEPS.length} - {STEPS[step]}
+        </p>
+      </div>
+
       <div className="form">
-        <TextField
-          label="Nickname"
-          required
-          value={nickname}
-          onChange={setNickname}
-          maxLength={NICKNAME_MAX}
-          error={fieldErrors.name}
-        />
+        {step === 0 && (
+          <IdentityStep config={config} state={state} patch={patch} errors={shown(0)} />
+        )}
 
-        <TextAreaField
-          label="Bio"
-          required
-          value={bio}
-          onChange={setBio}
-          maxLength={BIO_MAX}
-          rows={3}
-          placeholder="Introduce yourself in a sentence or two"
-          error={fieldErrors.bio}
-        />
-
-        <Field label="Gender" required error={fieldErrors.gender}>
-          <ButtonGroup
-            options={GENDER_OPTIONS}
-            value={gender}
-            onChange={setGender}
-            columns={2}
-          />
-        </Field>
-
-        <Field label="Zodiac sign" required error={fieldErrors.zodiac_sign}>
-          <Dropdown
-            options={toZodiacOptions(config.zodiac)}
-            value={zodiac}
-            onChange={setZodiac}
-            placeholder="Select"
-            error={!!fieldErrors.zodiac_sign}
-          />
-        </Field>
-
-        <LikertSection
-          statements={config.scale}
-          answers={scaleAnswers}
-          onAnswer={setScaleAnswer}
-          onReset={resetScale}
-          error={fieldErrors.scale_answers}
-        />
-
-        <TextField
-          label="Favorite artist"
-          required
-          value={favoriteSinger}
-          onChange={setFavoriteSinger}
-          maxLength={SINGER_MAX}
-          placeholder="e.g. Kanye West"
-          error={fieldErrors.favorite_singer}
-        />
-
-        <Field
-          label="Favorite genres"
-          required
-          help={`${favoriteGenres.length}/${config.genres.max_select} selected`}
-          error={fieldErrors.genres}
-        >
-          <MultiSelect
-            options={config.genres.options}
-            value={favoriteGenres}
-            onChange={setFavoriteGenres}
-            max={config.genres.max_select}
-            addPlaceholder="Add a genre…"
-          />
-        </Field>
-
-        {auditionQuestions && (
-          <AuditionSection
-            questions={auditionQuestions}
-            answers={auditionAnswers}
-            complete={auditionComplete}
-            onAnswerChange={setAnswer}
-            maxLength={AUDITION_MAX}
-            error={fieldErrors.audition_answers}
+        {step === 1 && (
+          <LikertSection
+            statements={config.scale}
+            answers={state.scale}
+            onAnswer={setScaleAnswer}
+            onReset={resetScale}
+            error={shown(1).scale_answers}
           />
         )}
 
-        <FormSection
-          title="Contacts"
-          description="Please provide your contact to be notified in case your application was selected."
-        >
-          <TextField
-            label="X handle"
-            value={xHandle}
-            onChange={value => setXHandle(value.replace(/^@+/, ''))}
-            maxLength={X_HANDLE_MAX}
-            prefix="@"
-            placeholder="handle"
-            help="optional"
-            error={fieldErrors.twitter}
+        {step === 2 && (
+          <EssaySection
+            questions={config.personality_questions}
+            answers={state.personality}
+            onAnswerChange={(i, value) => setEssayAnswer('personality', i, value)}
+            maxLength={ESSAY_MAX}
+            error={shown(2).personality_answers}
+            ariaLabel="Personality questions"
           />
+        )}
 
-          <TextField
-            label="Email"
-            type="email"
-            value={email}
-            onChange={setEmail}
-            maxLength={EMAIL_MAX}
-            placeholder="you@example.com"
-            help="optional"
-            error={fieldErrors.email}
+        {step === 3 && (
+          <EssaySection
+            questions={config.craft_questions}
+            answers={state.craft}
+            onAnswerChange={(i, value) => setEssayAnswer('craft', i, value)}
+            maxLength={ESSAY_MAX}
+            error={shown(3).craft_answers}
+            ariaLabel="Craft questions"
           />
-        </FormSection>
+        )}
 
-        <button
-          type="button"
-          className="special full-width"
-          disabled={!allValid || submitting}
-          onClick={handleApply}
-        >
-          {submitting ? 'Applying…' : 'Apply'}
-        </button>
+        <div className="flex gap-md">
+          {step > 0 && (
+            <button
+              type="button"
+              className="back shrink-0"
+              onClick={() => setStep(s => Math.max(0, s - 1))}
+            >
+              Back
+            </button>
+          )}
+          {isLast ? (
+            <button
+              type="button"
+              className="special flex-1"
+              disabled={submitting}
+              onClick={handleApply}
+            >
+              {submitting ? 'Applying…' : 'Apply'}
+            </button>
+          ) : (
+            <button type="button" className="special flex-1" onClick={next}>
+              Next
+            </button>
+          )}
+        </div>
       </div>
+
+      <footer className="mt-2xl pt-2xl border-t border-divider text-center text-sm leading-relaxed">
+        Got an AI assistant? They can fill it up for you!
+        <br />
+        Tell them to read this page:{' '}
+        <a
+          href="https://www.slopbop.com/form/SKILL.md"
+          className="text-accent underline"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          slopbop.com/form/SKILL.md
+        </a>
+      </footer>
     </div>
   );
 }
