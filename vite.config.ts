@@ -26,6 +26,12 @@ const SERVER_ROUTES: RegExp[] = (
   // against pathname *and* query string.
   .map(r => new RegExp(`^${r.source.replace(/:\w+/g, '[^/]+')}`))
 
+// Static files in public/ that are served as themselves, not as app routes.
+// vercel.json can't list them (the filesystem answers before any rewrite), so
+// SERVER_ROUTES above never sees them — without this the SW hands a navigation
+// to /form/SKILL.md the app shell and React renders its 404.
+const STATIC_FILES: RegExp[] = [/^\/form\//]
+
 // ── Image cache ────────────────────────────────────────────────
 // Where our media (artist / album / song art) is stored. Arweave content is
 // immutable + content-addressed, so a URL's bytes can never change — which makes
@@ -62,7 +68,7 @@ export default defineConfig({
         // app-shell precache — it loads normally over the network when needed.
         globIgnores: ['**/Branding/cds_thankyou.png'],
         // Let server-owned paths through to the network (see SERVER_ROUTES).
-        navigateFallbackDenylist: SERVER_ROUTES,
+        navigateFallbackDenylist: [...SERVER_ROUTES, ...STATIC_FILES],
         runtimeCaching: [
           {
             // Only image-destination requests — never audio/video (see above).
