@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useArtists } from '../../../hooks/useArtists';
+import { isSigned } from '../../../services/slopbop';
 import { ArtistCarousel } from './ArtistCarousel';
 import { ContactForm } from './ContactForm';
 
@@ -23,10 +24,12 @@ import { ContactForm } from './ContactForm';
  */
 export function MixtapeOrderForm() {
   const { artists } = useArtists();
+  // Only signed artists are rentable — a guest has nobody to book.
+  const bookable = artists.filter(isSigned);
   // Index rather than an id: the first artist is featured by default, and the
   // list is only known once it loads.
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const selectedArtist = artists[selectedIndex];
+  const selectedArtist = bookable[selectedIndex];
 
   return (
     <section className="relative flex flex-col gap-lg px-md pt-3xl">
@@ -38,7 +41,7 @@ export function MixtapeOrderForm() {
       </div>
 
       {/* Tap an artist's top song and the player keeps going while you write. */}
-      <ArtistCarousel artists={artists} index={selectedIndex} onIndexChange={setSelectedIndex} />
+      <ArtistCarousel artists={bookable} index={selectedIndex} onIndexChange={setSelectedIndex} />
 
       <ContactForm selectedArtistName={selectedArtist?.name} />
     </section>

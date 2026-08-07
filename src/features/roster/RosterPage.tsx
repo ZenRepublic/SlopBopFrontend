@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useArtists } from '../../hooks/useArtists';
+import { isSigned } from '../../services/slopbop';
 import { ArtistCard } from '../../components/ArtistCard';
 
 // The four elements every artist is built from — each its own emoji + colour so
@@ -14,6 +15,9 @@ const FACETS: { emoji: string; label: string; color: string }[] = [
 export default function RosterPage() {
   const { artists, loading } = useArtists();
   const navigate = useNavigate();
+
+  // The roster is the label's signed acts — guests never make the wall.
+  const roster = artists.filter(isSigned);
 
   return (
     <div className="flex flex-col">
@@ -44,7 +48,7 @@ export default function RosterPage() {
         </div>
       ) : (
         <div className="flex flex-col gap-lg border-t border-border pt-lg">
-          {artists.map(artist => (
+          {roster.map(artist => (
             <ArtistCard key={artist.artist_id} artist={artist} />
           ))}
           {/* The end of the roster is the moment of highest intent — someone

@@ -19,6 +19,14 @@ export interface Artist {
   owner_id?: string;
 }
 
+/**
+ * Whether an artist is signed to the label — someone controls it. Guest artists
+ * have no owner and are driven by hand inside the project, so anything public
+ * facing the audience filters with this. Not a permission: it decides what we
+ * put on show, not what anyone may do.
+ */
+export const isSigned = (a: Artist) => Boolean(a.owner_id?.trim());
+
 interface ArtistResponse {
   success: boolean;
   artist: Artist;
