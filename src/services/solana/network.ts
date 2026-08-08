@@ -1,6 +1,9 @@
 /**
- * Network configuration based on VITE_SOL_NETWORK environment variable.
- * Set VITE_SOL_NETWORK to 'mainnet' or 'devnet' in .env
+ * Which cluster we're on, and how a `Connection` reaches it.
+ *
+ * Driven by VITE_SOL_NETWORK ('mainnet' or 'devnet', defaulting to devnet) and
+ * VITE_HELIUS_API_KEY. Nothing here opens a socket — this is the description of
+ * the endpoint, handed to `ConnectionProvider` at the app root.
  */
 
 import type { ConnectionConfig } from '@solana/web3.js';
@@ -38,7 +41,8 @@ export const HELIUS_RPC_URL = networkEnv === 'mainnet'
  * opens an RPC connection today (auth is signature-only, which never touches the
  * network), so throwing on import would break a working app over a variable it
  * doesn't use. The error arrives the moment something genuinely needs RPC, and
- * not one moment sooner.
+ * not one moment sooner — which makes it the door the first on-chain read walks
+ * through.
  */
 export const RPC_CONFIG: ConnectionConfig = {
   commitment: 'confirmed',

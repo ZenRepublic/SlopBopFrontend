@@ -1,4 +1,4 @@
-import bs58 from 'bs58';
+import { devSigner, signMessageBase58 } from '../solana';
 import { apiFetch, ApiError } from './client';
 import * as session from './session';
 import type { Artist } from './artists';
@@ -23,7 +23,7 @@ export interface VerificationData {
   challengeId: string;
   /** Echoed back byte-identical to what /challenge returned — the server string-compares it. */
   message: string;
-  /** base58 of the ed25519 signature over the UTF-8 bytes of `message`. */
+  /** base58 of the ed25519 signature over the UTF-8 bytes of `message` — see `signMessageBase58`. */
   signature: string;
 }
 
@@ -99,9 +99,10 @@ export async function signInWithWallet(
     // and a failed verify spends one, so retrying an old id can only fail.
     const { challengeId, message } = await getChallenge(walletAddress);
 
-    // Sign the exact UTF-8 bytes and hand `message` back untouched: the server
-    // string-compares it, so any re-encoding or trim fails the check.
-    const signature = bs58.encode(await signMessage(new TextEncoder().encode(message)));
+    // `message` goes back untouched — the server string-compares it, so any
+    // re-encoding or trim fails the check. The signature's wire format is
+    // `services/solana`'s business.
+    const signature = await signMessageBase58(signMessage, message);
 
     const { token, expires_in } = await verifyWallet({
       walletAddress,
@@ -132,6 +133,39 @@ export async function signInWithWallet(
 export async function refreshAccount(): Promise<void> {
   const me = await fetchMe();
   session.setArtists(me.artists);
+}
+
+/**
+ * `refreshAccount` with `loading` raised around it, so a page that routes on the
+ * artist list can tell "audience account" from "haven't asked yet". Without it an
+ * owner reloading flashes the audience view before redirecting.
+ */
+async function restoreAccount(): Promise<void> {
+  session.beginSignIn();
+  try {
+    await refreshAccount();
+  } finally {
+    session.endSignIn();
+  }
+}
+
+/**
+ * Called once on boot. Restores a stored session, or in dev signs in from
+ * `VITE_DEV_WALLET_KEY` with no wallet, no extension and no popup — which is what
+ * makes the app usable in an embedded browser.
+ *
+ * **The dev key outranks a stored session naming a different wallet.** Otherwise
+ * whoever signed in last is pinned in `localStorage` and changing the key does
+ * nothing until you clear storage by hand. A stored session for the *same* wallet
+ * is kept, so a reload costs no signature.
+ */
+export async function bootSession(): Promise<void> {
+  const signer = devSigner();
+  if (signer && session.getUserId() !== signer.address) {
+    await signInWithWallet(signer.address, signer.signMessage);
+    return;
+  }
+  if (session.getUserId()) await restoreAccount();
 }
 
 function messageFor(err: unknown): string {

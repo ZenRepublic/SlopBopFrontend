@@ -2,8 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useRef, useSyncExter
 import { useWallet } from '@solana/wallet-adapter-react';
 import {
   getSnapshot,
-  getUserId,
-  refreshAccount,
+  bootSession,
   signInWithWallet,
   signOut,
   subscribe,
@@ -51,17 +50,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { publicKey, signMessage, connected } = useWallet();
   const { userId, artists, loading, error } = useSyncExternalStore(subscribe, getSnapshot);
 
-  // A stored token survives reloads, so on boot we know who we are but not yet
-  // what we control. A 401 is handled inside apiFetch; anything else leaves the
-  // session intact with an empty artist list, which still renders correctly.
-  //
-  // Mount-only, and read from the store rather than from `userId`: this is the
-  // *restore* path. Signing in has its own refresh inside `signInWithWallet`, so
-  // keying this on identity would fire a second /auth/me for every login.
+  // Mount-only: restore a stored session, or sign in from the dev key. Reads the
+  // store itself rather than `userId`, because keying on identity would fire a
+  // second /auth/me for every login — `signInWithWallet` already refreshes.
   useEffect(() => {
-    if (!getUserId()) return;
-    refreshAccount().catch(() => {
-      /* not fatal — see refreshAccount */
+    bootSession().catch(() => {
+      /* not fatal — a 401 is handled in apiFetch, anything else leaves the
+         session intact with an empty artist list, which renders correctly */
     });
   }, []);
 

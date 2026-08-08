@@ -19,19 +19,6 @@ import {
 
 import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
 
-import {
-  registerMwa,
-  createDefaultAuthorizationCache,
-  createDefaultChainSelector,
-  createDefaultWalletNotFoundHandler,
-} from '@solana-mobile/wallet-standard-mobile';
-
-// Desktop wallet adapters (optional enhancers)
-import {
-  PhantomWalletAdapter,
-  SolflareWalletAdapter,
-} from '@solana/wallet-adapter-wallets';
-
 import ArtistProfile from './features/artist_profile/ArtistProfile';
 import ImageStudioPage from './features/image_studio/ImageStudioPage';
 import { NavBar } from './components/NavBar';
@@ -43,8 +30,8 @@ import AboutPage from './features/about/AboutPage';
 import RosterPage from './features/roster/RosterPage';
 import CommissionPage from './features/commission/CommissionPage';
 import ApplicationForm from './features/apply/ApplicationForm';
-import { SOLANA_CHAIN, HELIUS_RPC_URL, RPC_CONFIG } from './config/network';
-import { devWallet, selectDevWallet } from './config/devWallet';
+import AccountPage from './features/account/AccountPage';
+import { bootstrapSolana, solanaWallets, HELIUS_RPC_URL, RPC_CONFIG } from './services/solana';
 import { ToastProvider } from './context/ToastContext';
 import { AuthProvider } from './context/AuthContext';
 import { MusicPlayerProvider } from './context/MusicPlayerContext';
@@ -68,46 +55,23 @@ registerSW({ immediate: true });
 
 /**
  * ---------------------------------------------------------
- * MWA + Wallet Standard registration
+ * Solana bootstrap
  * ---------------------------------------------------------
- * This MUST run once, before React renders.
+ * Wallet Standard / MWA registration and the stored wallet selection. This MUST
+ * run once, before React renders — see `services/solana/wallets.ts`.
  */
-registerMwa({
-  appIdentity: {
-    name: 'Slop Bop',
-    uri: window.location.origin,
-    icon: '/Branding/logo-full.png', // must exist in /public
-  },
-  authorizationCache: createDefaultAuthorizationCache(),
-  chains: [SOLANA_CHAIN],
-  chainSelector: createDefaultChainSelector(),
-  onWalletNotFound: createDefaultWalletNotFoundHandler(),
-});
-
-// Also before React renders: WalletProvider reads the stored selection on mount,
-// so the dev wallet has to be chosen by now for autoConnect to pick it up.
-selectDevWallet();
+bootstrapSolana();
 
 interface WalletContextProviderProps {
   children: ReactNode;
 }
 
 function WalletContextProvider({ children }: WalletContextProviderProps) {
-  const endpoint = HELIUS_RPC_URL;
-
-  /**
-   * Desktop adapters only.
-   * Wallet Standard + MWA wallets are injected automatically.
-   */
-  const wallets = useMemo(() => {
-    const real = [new PhantomWalletAdapter(), new SolflareWalletAdapter()];
-    // Null unless a dev build has VITE_DEV_WALLET_KEY set — see config/devWallet.ts.
-    const dev = devWallet();
-    return dev ? [dev, ...real] : real;
-  }, []);
+  // Once — a fresh array would make WalletProvider re-resolve its wallets.
+  const wallets = useMemo(() => solanaWallets(), []);
 
   return (
-    <ConnectionProvider endpoint={endpoint} config={RPC_CONFIG}>
+    <ConnectionProvider endpoint={HELIUS_RPC_URL} config={RPC_CONFIG}>
       <WalletProvider wallets={wallets} autoConnect={true}>
         <WalletModalProvider>
           {children}
@@ -186,6 +150,10 @@ const router = createBrowserRouter([
       { path: '/commission', element: <CommissionPage /> },
       { path: '/map', element: <MapPage /> },
       { path: '/apply', element: <ApplicationForm /> },
+      // The Account tab's destination. It resolves to the artist page when the
+      // session points at exactly one artist, so it's a landing rather than a
+      // place you stay — see features/account/AccountPage.tsx.
+      { path: '/account', element: <AccountPage /> },
       { path: '/artists/:id', element: <ArtistProfile /> },
       // Owner-only in practice — the page checks `is_owner` and every endpoint
       // behind it is owner-gated server-side. Under the artist, because it's one

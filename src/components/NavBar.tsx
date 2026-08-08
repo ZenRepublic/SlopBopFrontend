@@ -1,21 +1,20 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { AccountSheet } from './AccountSheet';
 
 type Tab = {
-  // The route this tab opens, or null for the one tab whose destination isn't a
-  // constant: Account goes wherever the session says, so it's resolved on click.
-  path: string | null;
+  path: string;
   emoji: string;
   label: string;
 };
 
+// Four routes, nothing conditional. Account included: where it leads is
+// AccountPage's decision, not the nav's — the nav only navigates.
 const TABS: Tab[] = [
   { path: '/', emoji: '🎪', label: 'About' },
   { path: '/roster', emoji: '🎭', label: 'Roster' },
   { path: '/commission', emoji: '💽', label: 'Mixtape' },
-  { path: null, emoji: '👩🏻‍🎤', label: 'Account' },
+  { path: '/account', emoji: '👩🏻‍🎤', label: 'Account' },
   // Deferred — the route still works, just hidden from the nav for now.
   // Restore by re-adding this entry when Map comes back.
   // { path: '/map', emoji: '🗺️', label: 'Map' },
@@ -26,8 +25,7 @@ const TABS: Tab[] = [
 export function NavBar() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
-  const { isAuthed, artists } = useAuth();
-  const [accountOpen, setAccountOpen] = useState(false);
+  const { artists } = useAuth();
 
   // Channel-change static: themed noise bands pop in to cover the page (the CSS
   // for `.tv-switching` lives in transitions.css), swap the route ~230ms in
@@ -57,59 +55,31 @@ export function NavBar() {
     ];
   }, [pathname, navigate]);
 
-  const goToArtist = useCallback(
-    (artistId: string) => handleNav(`/artists/${artistId}`),
-    [handleNav],
-  );
-
-  // Account's destination, resolved fresh each render. Signed in and controlling
-  // exactly one artist it's a shortcut to that artist's page — the same public
-  // page everyone else sees, just with the owner's controls drawn on it. Every
-  // other answer (not signed in, no artist, or several to choose between) is a
-  // question, and null is how the tab says so: the sheet is what asks it. Note
-  // that an audience account lands here too — with nowhere to jump to, the sheet
-  // is what it opens, which is the right answer rather than a missing one.
-  const soleArtist = isAuthed && artists.length === 1 ? artists[0] : null;
-  const accountPath = soleArtist ? `/artists/${soleArtist.artist_id}` : null;
-
-  const handleTab = (tab: Tab) => {
-    const path = tab.path ?? accountPath;
-    if (path) handleNav(path);
-    else setAccountOpen(true);
-  };
-
-  // Account lights up on any artist you control, not on one fixed route.
+  // Account also lights up on an artist you control, because that's where
+  // /account sends you — the tab would otherwise go dark the instant it worked.
+  // Highlighting only; the destination stays a plain path.
   const isActive = (tab: Tab) =>
-    tab.path === null
-      ? artists.some(a => pathname === `/artists/${a.artist_id}`)
-      : pathname === tab.path;
+    pathname === tab.path ||
+    (tab.path === '/account' && artists.some(a => pathname === `/artists/${a.artist_id}`));
 
   return (
-    <>
-      <nav className="fixed bottom-0 left-0 right-0 z-fixed h-[60px] bg-surface-2 border-t border-border">
-        <div className="max-w-[430px] mx-auto h-full flex items-center justify-around">
-          {TABS.map(tab => (
-            <button
-              key={tab.label}
-              type="button"
-              onClick={() => handleTab(tab)}
-              // px-4, not the px-8 three tabs used to wear — four don't fit at 430px.
-              className={`flex flex-col items-center gap-0.5 px-4 h-full justify-center transition-base ${
-                isActive(tab) ? 'text-accent' : 'text-muted'
-              }`}
-            >
-              <span className="text-xl leading-none">{tab.emoji}</span>
-              <span className="text-[10px] font-medium uppercase tracking-wider">{tab.label}</span>
-            </button>
-          ))}
-        </div>
-      </nav>
-
-      <AccountSheet
-        open={accountOpen}
-        onClose={() => setAccountOpen(false)}
-        onGoToArtist={goToArtist}
-      />
-    </>
+    <nav className="fixed bottom-0 left-0 right-0 z-fixed h-[60px] bg-surface-2 border-t border-border">
+      <div className="max-w-[430px] mx-auto h-full flex items-center justify-around">
+        {TABS.map(tab => (
+          <button
+            key={tab.label}
+            type="button"
+            onClick={() => handleNav(tab.path)}
+            // px-4, not the px-8 three tabs used to wear — four don't fit at 430px.
+            className={`flex flex-col items-center gap-0.5 px-4 h-full justify-center transition-base ${
+              isActive(tab) ? 'text-accent' : 'text-muted'
+            }`}
+          >
+            <span className="text-xl leading-none">{tab.emoji}</span>
+            <span className="text-[10px] font-medium uppercase tracking-wider">{tab.label}</span>
+          </button>
+        ))}
+      </div>
+    </nav>
   );
 }
