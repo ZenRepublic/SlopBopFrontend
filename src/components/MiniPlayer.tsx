@@ -30,7 +30,9 @@ export default function MiniPlayer() {
   if (!track || expanded) return null;
 
   // Same source of truth as the full player's bar — just read-only here.
-  const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
+  // Infinity until the file can be sized, which would leave the fill at 0%.
+  const progress =
+    Number.isFinite(duration) && duration > 0 ? (currentTime / duration) * 100 : 0;
 
   return (
     <div

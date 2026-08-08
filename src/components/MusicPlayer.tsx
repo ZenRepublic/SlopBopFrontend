@@ -5,7 +5,11 @@ import { useSongBop } from '../hooks/songs';
 import Img from '../primitives/Img';
 import { fetchArweave } from '../services/arweave';
 
+// Guarded because a media element reports `duration` as Infinity until it can
+// size the file, which on a chunked response is not immediately — and unguarded
+// that renders as "Infinity:NaN".
 function formatTime(seconds: number): string {
+  if (!Number.isFinite(seconds) || seconds < 0) return '--:--';
   const mins = Math.floor(seconds / 60);
   const secs = Math.floor(seconds % 60);
   return `${mins}:${secs.toString().padStart(2, '0')}`;
@@ -94,7 +98,10 @@ export default function MusicPlayer() {
 
   if (!track || (!expanded && !rendered)) return null;
 
-  const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
+  // Infinity would make the fill 0% and the scrubber span a length that isn't
+  // the song's, so treat an unknown duration as "no seek bar yet".
+  const knownDuration = Number.isFinite(duration) && duration > 0 ? duration : 0;
+  const progress = knownDuration > 0 ? (currentTime / knownDuration) * 100 : 0;
 
   return (
     <div
@@ -268,10 +275,13 @@ export default function MusicPlayer() {
             <input
               type="range"
               min={0}
-              max={duration || 0}
+              max={knownDuration}
               step={0.1}
               value={currentTime}
               onChange={handleSeek}
+              // Nothing to seek within until the length is known — otherwise the
+              // thumb walks a range that isn't the song's.
+              disabled={knownDuration === 0}
               className="music-player-slider"
             />
           </div>

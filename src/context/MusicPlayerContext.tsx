@@ -125,7 +125,14 @@ export function MusicPlayerProvider({ children }: { children: ReactNode }) {
     });
 
     const onTimeUpdate = () => setCurrentTime(audio.currentTime);
-    const onLoadedMetadata = () => setDuration(audio.duration);
+    // A gateway that answers 200 with no Content-Length (arweave.net does) leaves
+    // `duration` at Infinity until enough is buffered to read the file's own Xing
+    // header. So take the element's value only once it's real — otherwise Infinity
+    // clobbers the duration the track was seeded with — and listen for the
+    // correction as well as the first report.
+    const onDuration = () => {
+      if (Number.isFinite(audio.duration) && audio.duration > 0) setDuration(audio.duration);
+    };
     // Advance to the next queued track, or stop at the end of the queue.
     const onEnded = () => {
       if (indexRef.current + 1 < queueRef.current.length) {
@@ -140,14 +147,16 @@ export function MusicPlayerProvider({ children }: { children: ReactNode }) {
     const onPause = () => setPlaying(false);
 
     audio.addEventListener('timeupdate', onTimeUpdate);
-    audio.addEventListener('loadedmetadata', onLoadedMetadata);
+    audio.addEventListener('loadedmetadata', onDuration);
+    audio.addEventListener('durationchange', onDuration);
     audio.addEventListener('ended', onEnded);
     audio.addEventListener('play', onPlay);
     audio.addEventListener('pause', onPause);
 
     return () => {
       audio.removeEventListener('timeupdate', onTimeUpdate);
-      audio.removeEventListener('loadedmetadata', onLoadedMetadata);
+      audio.removeEventListener('loadedmetadata', onDuration);
+      audio.removeEventListener('durationchange', onDuration);
       audio.removeEventListener('ended', onEnded);
       audio.removeEventListener('play', onPlay);
       audio.removeEventListener('pause', onPause);
