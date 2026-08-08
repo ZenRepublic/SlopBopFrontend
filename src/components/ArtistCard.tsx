@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Artist, songCredit } from '../services/slopbop';
-import { useTopSong } from '../hooks/useTopSong';
+import { useTopSong } from '../hooks/songs';
 import { useMusicPlayer } from '../context/MusicPlayerContext';
 import SingleCard from './songlist/SingleCard';
 import Img from '../primitives/Img';

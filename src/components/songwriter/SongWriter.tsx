@@ -1,6 +1,6 @@
 import { useState, useRef, useLayoutEffect } from 'react';
 import type { RequestStatus } from '../../services/slopbop';
-import { useSubmitSongRequest } from '../../hooks/useSubmitSongRequest';
+import { useSubmitSongRequest } from '../../hooks/requests';
 import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../context/AuthContext';
 import {

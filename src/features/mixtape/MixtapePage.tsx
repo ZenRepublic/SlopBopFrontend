@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
-import { useMixtape } from '../../hooks/useMixtape';
-import { useArtist } from '../../hooks/useArtist';
+import { useMixtape } from '../../hooks/collections';
+import { useArtist } from '../../hooks/artists';
 import { songCredit } from '../../services/slopbop';
 import SongList from '../../components/songlist/SongList';
 import Img from '../../primitives/Img';

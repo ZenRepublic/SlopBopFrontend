@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { useArtists } from '../../hooks/useArtists';
+import { useArtists } from '../../hooks/artists';
 import { isSigned } from '../../services/slopbop';
 import { ArtistCard } from '../../components/ArtistCard';
 

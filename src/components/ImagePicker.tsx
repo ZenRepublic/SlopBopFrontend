@@ -1,6 +1,6 @@
 import { Modal } from '../primitives/Modal';
 import Img from '../primitives/Img';
-import { useSavedImages } from '../hooks/useSavedImages';
+import { useSavedImages } from '../hooks/visuals';
 
 interface Props {
   open: boolean;

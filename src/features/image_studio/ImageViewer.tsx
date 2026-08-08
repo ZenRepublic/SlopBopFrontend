@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Modal } from '../../primitives/Modal';
 import Img from '../../primitives/Img';
 import type { SavedImage } from '../../services/slopbop';
-import { fetchArweave } from '../../config/arweave';
+import { fetchArweave } from '../../services/arweave';
 
 interface Props {
   /** The image being looked at, or null when nothing is. */

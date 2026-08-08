@@ -3,7 +3,7 @@ import { Modal } from '../../../primitives/Modal';
 import { TextAreaField } from '../../../primitives/form';
 import Img from '../../../primitives/Img';
 import ImagePicker from '../../../components/ImagePicker';
-import { useUpdateArtist } from '../../../hooks/useUpdateArtist';
+import { useUpdateArtist } from '../../../hooks/artists';
 import { useToast } from '../../../context/ToastContext';
 import type { Artist, ArtistUpdate } from '../../../services/slopbop';
 

@@ -8,11 +8,7 @@ import {
   ReactNode,
 } from 'react';
 import { useToast } from './ToastContext';
-import {
-  ARWEAVE_MAX_RETRIES,
-  ARWEAVE_RETRY_DELAY_MS,
-  ARWEAVE_STALL_SILENCE_MS,
-} from '../config/arweave';
+import { createMediaLoader, type MediaLoader } from '../services/arweave';
 
 export interface Track {
   id: string;
@@ -74,23 +70,13 @@ export function MusicPlayerProvider({ children }: { children: ReactNode }) {
   const [queueIndex, setQueueIndex] = useState(0);
   const [queueLength, setQueueLength] = useState(0);
 
-  // Bookkeeping for the load/retry cycle. Refs, not state: the mount effect's
-  // listeners are registered once and have to see current values.
-  const attemptsRef = useRef(0);
-  const trackRef = useRef<Track | null>(null);
-  const retryTimerRef = useRef<number | undefined>(undefined);
-  const stallTimerRef = useRef<number | undefined>(undefined);
-  const attemptRef = useRef<() => void>(() => {});
-
-  const clearTimers = useCallback(() => {
-    window.clearTimeout(retryTimerRef.current);
-    window.clearTimeout(stallTimerRef.current);
-    retryTimerRef.current = undefined;
-    stallTimerRef.current = undefined;
-  }, []);
+  // Getting bytes into the element — gateways, retries, watchdogs — belongs to
+  // the loader, created alongside the element below. The player only starts
+  // loads and is told when one is waiting or has died.
+  const loaderRef = useRef<MediaLoader | null>(null);
 
   // Surface a failed play() instead of swallowing it. This is for *resuming* a
-  // track that already loaded — a failed load goes through retryOrFail instead.
+  // track that already loaded — a failed load is the loader's business.
   // AbortError is the one exception: it just means a newer load superseded this.
   const handlePlayError = useCallback((err: unknown) => {
     setPlaying(false);
@@ -100,76 +86,18 @@ export function MusicPlayerProvider({ children }: { children: ReactNode }) {
     }
   }, [showToast]);
 
-  // A load failed or went silent (see `config/arweave` for why that happens as
-  // often as it does). Retry without telling anyone: `loading` stays true across
-  // the gap, so the spinner never stops and nobody is asked to press play again.
-  // Only once the budget is spent does this surface an error.
-  const retryOrFail = useCallback((message: string) => {
-    clearTimers();
-    if (attemptsRef.current >= ARWEAVE_MAX_RETRIES) {
-      setPlaying(false);
-      setLoading(false);
-      showToast(message);
-      return;
-    }
-    attemptsRef.current += 1;
-    setLoading(true);
-    retryTimerRef.current = window.setTimeout(
-      () => attemptRef.current(),
-      ARWEAVE_RETRY_DELAY_MS,
-    );
-  }, [clearTimers, showToast]);
-
-  // (Re)start the silence watchdog: armed when a load begins, pushed forward by
-  // every `progress` event, cleared once the element says it can play. Measures
-  // silence rather than elapsed time, so a slow connection is never cut off.
-  const armStallWatchdog = useCallback(() => {
-    window.clearTimeout(stallTimerRef.current);
-    stallTimerRef.current = window.setTimeout(
-      () => retryOrFail("Couldn't load this song — check your connection and try again."),
-      ARWEAVE_STALL_SILENCE_MS,
-    );
-  }, [retryOrFail]);
-
-  // One load attempt at whatever `trackRef` holds. Split out from loadAndPlay so
-  // a retry re-runs exactly this without resetting the attempt counter.
-  //
-  // Re-assigning `src` is the whole point of it: that's what re-runs the media
-  // load algorithm. play() alone can't — after a failed load the element sits in
-  // NETWORK_NO_SOURCE with `error` set, and can only reject again.
-  const attempt = useCallback(() => {
-    const audio = audioRef.current;
-    const t = trackRef.current;
-    if (!audio || !t) return;
-    clearTimers();
-    setLoading(true);
-    audio.src = t.audioUrl;
-    armStallWatchdog();
-    // Start within the user gesture so autoplay policy doesn't block it.
-    audio.play().catch(err => {
-      if ((err as DOMException)?.name === 'AbortError') return; // superseded
-      retryOrFail("Couldn't play this song — check your connection and try again.");
-    });
-  }, [clearTimers, armStallWatchdog, retryOrFail]);
-
-  // The retry timer fires long after the render that scheduled it, so it reaches
-  // `attempt` through a ref rather than closing over a stale copy.
-  useEffect(() => {
-    attemptRef.current = attempt;
-  }, [attempt]);
-
   // Load a track into the audio element and start it. Stable so the mount
   // effect's `ended` handler can call it to auto-advance the queue.
   const loadAndPlay = useCallback((t: Track) => {
-    if (!audioRef.current) return;
-    trackRef.current = t;
-    attemptsRef.current = 0;
+    if (!loaderRef.current) return;
     setTrack(t);
     setCurrentTime(0);
     setDuration(t.duration ?? 0);
     setPlaying(true);
-    attempt();
-  }, [attempt]);
+    // Called straight from the click that asked for it, so play() lands inside
+    // the gesture and autoplay policy doesn't block it.
+    loaderRef.current.load(t.audioUrl, { play: true });
+  }, []);
 
   // Jump to a queue position. The single place the index moves, so the ref and
   // the rendered mirror can't drift apart. Out-of-range is a no-op.
@@ -186,6 +114,16 @@ export function MusicPlayerProvider({ children }: { children: ReactNode }) {
     audio.preload = 'auto';
     audioRef.current = audio;
 
+    // Everything about *getting* the bytes. It attaches its own listeners for the
+    // load lifecycle; the ones below are the player's own concerns.
+    loaderRef.current = createMediaLoader(audio, {
+      onLoadingChange: setLoading,
+      onFailed: message => {
+        setPlaying(false);
+        showToast(message);
+      },
+    });
+
     const onTimeUpdate = () => setCurrentTime(audio.currentTime);
     const onLoadedMetadata = () => setDuration(audio.duration);
     // Advance to the next queued track, or stop at the end of the queue.
@@ -196,56 +134,29 @@ export function MusicPlayerProvider({ children }: { children: ReactNode }) {
         setPlaying(false);
       }
     };
-    // Buffering / readiness — these drive the loading indicator. Reaching either
-    // of the ready states means the load landed: stand the watchdog down and give
-    // the track its full retry budget back for whatever happens next.
-    const onWaiting = () => setLoading(true);
-    const onReady = () => {
-      clearTimers();
-      attemptsRef.current = 0;
-      setLoading(false);
-    };
-    // Bytes arrived, so the load isn't silent — push the watchdog out. Guarded on
-    // the timer being armed, so mid-playback buffering doesn't start a new one.
-    const onProgress = () => {
-      if (stallTimerRef.current !== undefined) armStallWatchdog();
-    };
     // Mirror the element's own play state, so the button stays honest when
     // playback stops for reasons we never initiated (OS interruption, etc).
     const onPlay = () => setPlaying(true);
     const onPause = () => setPlaying(false);
-    // A failed load, which is usually the gateway blipping rather than anything
-    // wrong with the song — retry before it ever becomes the user's problem.
-    const onError = () =>
-      retryOrFail("Couldn't load this song — check your connection and try again.");
 
     audio.addEventListener('timeupdate', onTimeUpdate);
     audio.addEventListener('loadedmetadata', onLoadedMetadata);
     audio.addEventListener('ended', onEnded);
-    audio.addEventListener('waiting', onWaiting);
-    audio.addEventListener('progress', onProgress);
-    audio.addEventListener('playing', onReady);
-    audio.addEventListener('canplay', onReady);
     audio.addEventListener('play', onPlay);
     audio.addEventListener('pause', onPause);
-    audio.addEventListener('error', onError);
 
     return () => {
       audio.removeEventListener('timeupdate', onTimeUpdate);
       audio.removeEventListener('loadedmetadata', onLoadedMetadata);
       audio.removeEventListener('ended', onEnded);
-      audio.removeEventListener('waiting', onWaiting);
-      audio.removeEventListener('progress', onProgress);
-      audio.removeEventListener('playing', onReady);
-      audio.removeEventListener('canplay', onReady);
       audio.removeEventListener('play', onPlay);
       audio.removeEventListener('pause', onPause);
-      audio.removeEventListener('error', onError);
-      clearTimers();
+      loaderRef.current?.dispose();
+      loaderRef.current = null;
       audio.pause();
     };
     // Every dependency is stable, so the audio element is still set up once.
-  }, [go, clearTimers, retryOrFail, armStallWatchdog]);
+  }, [go, showToast]);
 
   // Play an ordered list as a queue, starting at `startIndex`; each track
   // auto-advances to the next when it ends.
@@ -287,14 +198,13 @@ export function MusicPlayerProvider({ children }: { children: ReactNode }) {
     // the same error forever, and only a page reload ever fixed it. Re-run the
     // load instead, with a fresh budget: the button is a real retry.
     if (audio.error || audio.networkState === HTMLMediaElement.NETWORK_NO_SOURCE) {
-      attemptsRef.current = 0;
       setPlaying(true);
-      attempt();
+      loaderRef.current?.reload();
       return;
     }
     setPlaying(true);
     audio.play().catch(handlePlayError);
-  }, [track, attempt, handlePlayError]);
+  }, [track, handlePlayError]);
 
   const next = useCallback(() => go(indexRef.current + 1), [go]);
   const prev = useCallback(() => go(indexRef.current - 1), [go]);
@@ -321,10 +231,8 @@ export function MusicPlayerProvider({ children }: { children: ReactNode }) {
       audio.pause();
       audio.currentTime = 0;
     }
-    // Drop any retry in flight — a closed player must not resurrect itself.
-    clearTimers();
-    trackRef.current = null;
-    attemptsRef.current = 0;
+    // Drop any load in flight — a closed player must not resurrect itself.
+    loaderRef.current?.cancel();
     queueRef.current = [];
     indexRef.current = 0;
     setQueueIndex(0);
@@ -334,7 +242,7 @@ export function MusicPlayerProvider({ children }: { children: ReactNode }) {
     setCurrentTime(0);
     setTrack(null);
     setExpanded(false);
-  }, [clearTimers]);
+  }, []);
 
   return (
     <MusicPlayerContext.Provider

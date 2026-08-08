@@ -74,9 +74,11 @@ export default defineConfig({
             // Only image-destination requests — never audio/video (see above).
             // NOTE: this fn is serialized into the generated SW, so it can't
             // reference outer scope (IMAGE_HOST) — the host regex is inlined.
+            // Hosts mirror TRUSTED_GATEWAYS in `src/services/arweave/gateways.ts` — change
+            // both together, or images served from the fallback stop caching.
             urlPattern: ({ url, request }) =>
               request.destination === 'image' &&
-              /^https:\/\/.*turbo-gateway\.com\/.*/i.test(url.href),
+              /^https:\/\/([^/]*\.)?(turbo-gateway\.com|arweave\.net)\//i.test(url.href),
             handler: 'CacheFirst',
             options: {
               // -v2: `Img` now requests these with crossorigin, so the old cache

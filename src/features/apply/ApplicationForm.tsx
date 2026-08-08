@@ -10,8 +10,7 @@ import {
   type FieldErrors,
   type FormState,
 } from './validation';
-import { useFormConfig } from '../../hooks/useFormConfig';
-import { useSubmitApplication } from '../../hooks/useSubmitApplication';
+import { useFormConfig, useSubmitApplication } from '../../hooks/application';
 import { useToast } from '../../context/ToastContext';
 import { type ApplicationPayload } from '../../services/slopbop';
 

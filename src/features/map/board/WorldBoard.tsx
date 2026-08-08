@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
-import { useWorldMap } from '../../../hooks/useWorldMap';
-import { useArtists } from '../../../hooks/useArtists';
+import { useWorldMap } from '../../../hooks/sim';
+import { useArtists } from '../../../hooks/artists';
 import { useSim } from '../../../context/SimContext';
 import { Artist, Location } from '../../../services/slopbop';
 import { Stage, Sprite, useCamera, Tile } from '../scene';

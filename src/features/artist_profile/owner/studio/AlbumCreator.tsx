@@ -3,8 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { TextField, Field } from '../../../../primitives/form';
 import Img from '../../../../primitives/Img';
 import ImagePicker from '../../../../components/ImagePicker';
-import { useCreateAlbum } from '../../../../hooks/useCreateAlbum';
-import { useCollections } from '../../../../hooks/useCollections';
+import { useCollections, useCreateAlbum } from '../../../../hooks/collections';
 import { useToast } from '../../../../context/ToastContext';
 import { ALBUM_TITLE_MAX, ALBUM_TRACKS_MIN, type Collection } from '../../../../services/slopbop';
 

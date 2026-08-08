@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import type { Collection } from '../../services/slopbop';
-import { jamCapacity } from '../../hooks/useLiveJam';
+import { jamCapacity } from '../../hooks/collections';
 import { Countdown } from '../../primitives/Countdown';
 import Img from '../../primitives/Img';
 

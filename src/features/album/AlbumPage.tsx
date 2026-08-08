@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { useAlbum } from '../../hooks/useAlbum';
-import { useArtist } from '../../hooks/useArtist';
+import { useAlbum } from '../../hooks/collections';
+import { useArtist } from '../../hooks/artists';
 import { songCredit } from '../../services/slopbop';
 import SongList from '../../components/songlist/SongList';
 import Img from '../../primitives/Img';

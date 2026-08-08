@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useCollections } from '../../hooks/useCollections';
-import { useSongs } from '../../hooks/useSongs';
+import { useCollections } from '../../hooks/collections';
+import { useSongs } from '../../hooks/songs';
 import { isArtistsOwnWork, songCredit, type Collection, type Song } from '../../services/slopbop';
 import AlbumCard from './AlbumCard';
 import SongList from '../../components/songlist/SongList';

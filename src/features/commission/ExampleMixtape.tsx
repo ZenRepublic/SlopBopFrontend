@@ -1,6 +1,6 @@
 import { isReleased, songCredit, type Song } from '../../services/slopbop';
-import { useMixtape } from '../../hooks/useMixtape';
-import { useArtist } from '../../hooks/useArtist';
+import { useMixtape } from '../../hooks/collections';
+import { useArtist } from '../../hooks/artists';
 import { useMusicPlayer, type Track } from '../../context/MusicPlayerContext';
 import SingleCard from '../../components/songlist/SingleCard';
 import Img from '../../primitives/Img';

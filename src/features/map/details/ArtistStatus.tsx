@@ -1,6 +1,5 @@
 import { useSim } from '../../../context/SimContext';
-import { useWorldMap } from '../../../hooks/useWorldMap';
-import { useWorldItems } from '../../../hooks/useWorldItems';
+import { useWorldItems, useWorldMap } from '../../../hooks/sim';
 import { StatBar } from './StatBar';
 import { Item, Location, SnapshotState } from '../../../services/slopbop';
 

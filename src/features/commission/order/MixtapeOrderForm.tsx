@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useArtists } from '../../../hooks/useArtists';
+import { useArtists } from '../../../hooks/artists';
 import { isSigned } from '../../../services/slopbop';
 import { ArtistCarousel } from './ArtistCarousel';
 import { ContactForm } from './ContactForm';

@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import type { Collection } from '../../services/slopbop';
-import { jamCapacity } from '../../hooks/useLiveJam';
+import { jamCapacity } from '../../hooks/collections';
 import Img from '../../primitives/Img';
 
 interface Props {

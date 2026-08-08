@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useMusicPlayer } from '../context/MusicPlayerContext';
-import { useSongBop } from '../hooks/useSongBop';
+import { useSongBop } from '../hooks/songs';
 import Img from '../primitives/Img';
-import { fetchArweave } from '../config/arweave';
+import { fetchArweave } from '../services/arweave';
 
 function formatTime(seconds: number): string {
   const mins = Math.floor(seconds / 60);

@@ -1,5 +1,6 @@
 import { SocialLinks } from '../../primitives/SocialLinks';
 import { PROJECT_SOCIALS } from '../../config/socials';
+import { useArweaveMedia } from '../../hooks/arweave';
 
 const VIDEO_URL = 'https://turbo-gateway.com/yClTzZ-peMxVUmemE0yLjW5QsFANaYIK77rNTSUW8qM';
 
@@ -23,14 +24,20 @@ const POSTER_URL = '/Images/prize-video-poster.webp';
  * viewer actually taps play, so the weight never lands on page load. Arweave's
  * gateway serves range requests, so playback streams and seeks from there
  * instead of pulling the whole file down first.
+ *
+ * The source comes from `useArweaveMedia` rather than a `src` attribute, so a
+ * gateway that stops serving is routed around exactly like a song is — failing
+ * over *is* reassigning `src`, and JSX setting it back would undo that.
  */
 export function PrizeVideo() {
+  const video = useArweaveMedia<HTMLVideoElement>(VIDEO_URL);
+
   return (
     // One width owner: the frame sets the column and the row below inherits it,
     // so "see more" and the icons land on the video's own edges.
     <div className="w-full max-w-[325px] mx-auto flex flex-col gap-lg">
       <video
-        src={VIDEO_URL}
+        ref={video.ref}
         poster={POSTER_URL}
         controls
         playsInline

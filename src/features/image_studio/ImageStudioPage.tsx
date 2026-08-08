@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ButtonGroup, type ButtonGroupOption } from '../../primitives/form';
-import { useArtist } from '../../hooks/useArtist';
-import { useImageStudio } from '../../hooks/useImageStudio';
+import { useArtist } from '../../hooks/artists';
+import { useImageStudio } from '../../hooks/visuals';
 import { useToast } from '../../context/ToastContext';
 import Gallery from './Gallery';
 import Creator from './Creator';

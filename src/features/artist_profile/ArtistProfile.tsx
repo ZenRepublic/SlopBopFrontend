@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { useArtist } from '../../hooks/useArtist';
-import { useLiveJam } from '../../hooks/useLiveJam';
+import { useArtist } from '../../hooks/artists';
+import { useLiveJam } from '../../hooks/collections';
 import ExpandableBio from './ExpandableBio';
 import TagPills from '../../primitives/TagPills';
 import Img from '../../primitives/Img';

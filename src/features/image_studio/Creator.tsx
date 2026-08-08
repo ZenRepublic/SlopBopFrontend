@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { TextAreaField } from '../../primitives/form';
 import { useToast } from '../../context/ToastContext';
 import { MAX_VISUAL_PROMPT } from '../../services/slopbop';
-import type { ImageStudio } from '../../hooks/useImageStudio';
+import type { ImageStudio } from '../../hooks/visuals';
 import DraftCard from './DraftCard';
 
 interface Props {

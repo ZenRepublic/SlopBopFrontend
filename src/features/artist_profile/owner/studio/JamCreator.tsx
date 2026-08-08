@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LockScreen } from '../../../../primitives/LockScreen';
 import { TextField } from '../../../../primitives/form';
-import { useCreateJam } from '../../../../hooks/useCreateJam';
+import { useCreateJam } from '../../../../hooks/collections';
 import { useToast } from '../../../../context/ToastContext';
 
 interface Props {
