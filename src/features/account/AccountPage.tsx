@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { ConnectWalletButton } from '../../components/ConnectWalletButton';
 import { useWalletConnect } from '../../hooks/solana';
@@ -24,16 +24,18 @@ export default function AccountPage() {
   const { userId, isAuthed, artists, loading, error, login } = useAuth();
 
   // Connecting is the whole gesture — the signature prompt follows on its own
-  // rather than behind a second button nobody asked for. Once per address, so a
-  // refused or failed signature waits for an explicit retry instead of looping.
-  const attempted = useRef<string | null>(null);
+  // rather than behind a second button nobody asked for.
+  //
+  // `error` is what stops it looping: a refusal leaves it set, and every path
+  // that clears it is a deliberate restart — `beginSignIn` on the retry button,
+  // `signOut` when a wallet disconnects or switches address. So a rejected prompt
+  // waits, and connecting a different wallet still signs in on its own.
   useEffect(() => {
-    if (!connected || isAuthed || loading || attempted.current === connected) return;
-    attempted.current = connected;
+    if (!connected || isAuthed || loading || error) return;
     login().catch(() => {
       /* surfaced through `error` below */
     });
-  }, [connected, isAuthed, loading, login]);
+  }, [connected, isAuthed, loading, error, login]);
 
   // One artist and you're in: this page had one question and it's answered.
   // Checked before `loading` so the redirect happens the moment /auth/me lands.

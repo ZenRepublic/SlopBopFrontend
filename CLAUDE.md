@@ -38,7 +38,11 @@ Env: `VITE_API_URL` (backend base, defaults `http://localhost:5000`), `VITE_SOL_
 
 **A user is not an artist.** `isAuthed` means a wallet was proved — that's the only thing that should gate "may you act at all". `artists` is a separate fact and is usually empty: most signed-in people are audience. Gating UI on `artists.length` turns an ordinary account into a broken one. Zero is valid, several is valid.
 
-**Session expiry is handled once**, inside `apiFetch`: a 401 on a request that carried a token ends the session and re-renders the app signed-out. Feature hooks handle only what's theirs — 403, 404, 409 — and must not re-implement logout. A 401 without a token (a bad signature at `/auth/verify`) is not an expiry and is left alone.
+**Session endings are handled once**, inside `apiFetch`, and **the `reason` decides — not the status.** Every auth refusal carries a stable code (`token_expired`, `session_revoked`, `account_not_found`, `account_disabled`, `invalid_token`…); `SESSION_ENDED` in `client.ts` maps the ones that mean "this session is over" to what to say about each. That's why `account_disabled` ends a session despite being a 403, why `auth_not_configured` doesn't despite being fatal, and why `/auth/verify`'s 401s need no special case — `invalid_signature` simply isn't in the map. Feature hooks handle only what's theirs (403, 404, 409) and must not re-implement logout.
+
+**Sign out through `endSession()`, never `session.signOut()` directly.** Sessions are rows on the backend, so dropping the token locally leaves a working token behind; `endSession` clears locally first (so the UI moves immediately) and revokes the row in the background. All three endings — the button, a wallet switching address, a wallet disconnecting — go through it.
+
+**`/auth/me` returns `ArtistIdentity` (`artist_id` + `name`), not `Artist`.** The full document is live simulator state, so a session holding a copy holds one that drifts. Anything richer comes from `GET /slopbop/artists/:id`, which is current and is the only thing that carries `is_owner`.
 
 **Don't hand-roll `fetch`.** `ApiError` carries `status` and the parsed `body`, so endpoints answering with field errors or a `reason` code are readable through `apiFetch`. Dropping out of it silently drops the Authorization header.
 

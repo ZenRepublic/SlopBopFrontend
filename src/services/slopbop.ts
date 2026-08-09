@@ -17,3 +17,4 @@ export * from './slopbop/auth';
 export * from './slopbop/application';
 export * from './slopbop/requests';
 export * from './slopbop/visuals';
+export * from './slopbop/transactions';

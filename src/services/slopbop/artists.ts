@@ -20,6 +20,18 @@ export interface Artist {
 }
 
 /**
+ * Just enough to name an artist and link to one. What `/auth/me` returns for the
+ * artists a session controls, and deliberately **not** an `Artist`: the full
+ * document is live simulator state, so anything holding a copy of it holds one
+ * that drifts. Fetch `/slopbop/artists/:id` for the real thing — that's always
+ * current, and it's the only answer that carries `is_owner`.
+ */
+export interface ArtistIdentity {
+  artist_id: string;
+  name: string;
+}
+
+/**
  * Whether an artist is signed to the label — someone controls it. Guest artists
  * have no owner and are driven by hand inside the project, so anything public
  * facing the audience filters with this. Not a permission: it decides what we

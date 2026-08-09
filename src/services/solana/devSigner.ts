@@ -47,8 +47,17 @@ function devKeypair(): Keypair | null {
   }
 }
 
+// Built once. The keypair can't change at runtime, and this is called from
+// render — an unmemoized version would re-parse the key and re-log on every one.
+let cached: DevSigner | null | undefined;
+
 /** The dev signer, or null when the key isn't set or this isn't a dev build. */
 export function devSigner(): DevSigner | null {
+  if (cached === undefined) cached = build();
+  return cached;
+}
+
+function build(): DevSigner | null {
   const keypair = devKeypair();
   if (!keypair) return null;
 

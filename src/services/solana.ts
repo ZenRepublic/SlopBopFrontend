@@ -20,7 +20,8 @@ export {
 
 export { bootstrapSolana, solanaWallets } from './solana/wallets';
 
-export { signMessageBase58 } from './solana/signing';
+export { signMessageBase58, signTransactionBase64 } from './solana/signing';
+export type { TransactionSigner } from './solana/signing';
 
 export { devSigner } from './solana/devSigner';
 export type { DevSigner } from './solana/devSigner';

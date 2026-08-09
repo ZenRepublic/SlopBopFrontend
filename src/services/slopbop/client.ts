@@ -8,7 +8,46 @@ export const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000')
  * (a field-error map, a `reason` code) and needs a cast at the point of use —
  * which is where the caller knows what it asked for.
  */
-export type ApiErrorBody = { error?: string; [key: string]: unknown } | null;
+export type ApiErrorBody = { error?: string; reason?: AuthReason; [key: string]: unknown } | null;
+
+/**
+ * Stable machine-readable reasons the auth layer refuses a request. Mirrors the
+ * backend's `AuthReason` — branch on these rather than on prose or on a status
+ * code, because 401 alone can't tell an expired token from a revoked session
+ * from a deleted account.
+ */
+export type AuthReason =
+  | 'auth_not_configured'
+  | 'invalid_wallet'
+  | 'challenge_not_found'
+  | 'challenge_expired'
+  | 'challenge_spent'
+  | 'wallet_mismatch'
+  | 'invalid_signature'
+  | 'missing_token'
+  | 'invalid_token'
+  | 'token_expired'
+  | 'session_revoked'
+  | 'account_not_found'
+  | 'account_disabled';
+
+/**
+ * The reasons that mean *this session is over*, and what to say about each.
+ *
+ * Only these end a session. `auth_not_configured` is a 500 and a deploy problem,
+ * so it deliberately isn't here — logging someone out because the server lost
+ * its JWT secret would be the wrong answer to a problem that isn't theirs. The
+ * challenge reasons aren't here either: they come from `/auth/verify`, which is
+ * a sign-in *attempt* and has no session to end.
+ */
+const SESSION_ENDED: Partial<Record<AuthReason, string>> = {
+  missing_token: 'Your session ended. Sign in again to continue.',
+  invalid_token: 'Your session is no longer valid. Sign in again to continue.',
+  token_expired: 'Your session expired. Sign in again to continue.',
+  session_revoked: 'You were signed out. Sign in again to continue.',
+  account_not_found: 'This account no longer exists. Sign in again to recreate it.',
+  account_disabled: 'This account has been disabled.',
+};
 
 /**
  * A non-2xx response.
@@ -65,13 +104,24 @@ export async function apiFetch<T>(endpoint: string, options?: FetchOptions): Pro
   });
 
   if (!response.ok) {
-    const body = await response.json().catch(() => null);
+    const body: ApiErrorBody = await response.json().catch(() => null);
 
-    // Only when we actually sent a token. A 401 from /auth/verify means the
-    // signature didn't check out — there is no session to end, and treating it
-    // as an expiry would wipe the error the sign-in flow is about to report.
-    if (response.status === 401 && token) {
-      signOut('Your session expired. Sign in again to continue.');
+    // Only when we actually sent a token: an anonymous call to a gated route
+    // gets `missing_token` too, and ending a session that was never there would
+    // put a spurious "you were signed out" on screen.
+    //
+    // Past that, the *reason* decides — not the status. That's what lets
+    // `account_disabled` (a 403) end a session while `auth_not_configured` (a
+    // 500) doesn't, and it's why /auth/verify's 401s no longer need a special
+    // case: `invalid_signature` simply isn't a session-ending reason.
+    if (token) {
+      const ended = body?.reason ? SESSION_ENDED[body.reason] : undefined;
+      if (ended) signOut(ended);
+      // A gated route that answered 401 without a reason predates the reason
+      // codes. Treat it the way we always did rather than leaving a dead session.
+      else if (response.status === 401 && !body?.reason) {
+        signOut('Your session expired. Sign in again to continue.');
+      }
     }
 
     throw new ApiError(

@@ -1,4 +1,4 @@
-import type { Artist } from './artists';
+import type { ArtistIdentity } from './artists';
 
 /**
  * **The signed-in user. One copy, app-wide.**
@@ -31,7 +31,7 @@ export interface SessionSnapshot {
   /** The signed-in user's id — their Solana public key — or null when signed out. */
   userId: string | null;
   /** Artists this user controls. Empty is the common case; see the note above. */
-  artists: Artist[];
+  artists: ArtistIdentity[];
   /** A sign-in or account refresh is in flight. */
   loading: boolean;
   /** Human-readable failure from the last sign-in attempt, cleared when one starts. */
@@ -52,7 +52,7 @@ interface StoredCredentials {
 }
 
 let credentials: StoredCredentials | null = readStored();
-let artists: Artist[] = [];
+let artists: ArtistIdentity[] = [];
 let loading = false;
 let error: string | null = null;
 
@@ -162,7 +162,7 @@ export function setCredentials(userId: string, token: string, expiresIn: number)
 }
 
 /** The account read landed — which artists, if any, this user controls. */
-export function setArtists(next: Artist[]) {
+export function setArtists(next: ArtistIdentity[]) {
   artists = next;
   emit();
 }

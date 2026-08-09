@@ -1,7 +1,7 @@
 import { devSigner, signMessageBase58 } from '../solana';
 import { apiFetch, ApiError } from './client';
 import * as session from './session';
-import type { Artist } from './artists';
+import type { ArtistIdentity } from './artists';
 
 /**
  * Wallet sign-in — the flow, in one place.
@@ -21,9 +21,7 @@ import type { Artist } from './artists';
 export interface VerificationData {
   walletAddress: string;
   challengeId: string;
-  /** Echoed back byte-identical to what /challenge returned — the server string-compares it. */
-  message: string;
-  /** base58 of the ed25519 signature over the UTF-8 bytes of `message` — see `signMessageBase58`. */
+  /** base58 of the ed25519 signature over the UTF-8 bytes of the challenge message. */
   signature: string;
 }
 
@@ -31,6 +29,8 @@ interface ChallengeResponse {
   challengeId: string;
   message: string;
   walletAddress: string;
+  /** ISO timestamp. Informational — the server enforces it. */
+  expires_at: string;
 }
 
 interface VerifyResponse {
@@ -45,11 +45,12 @@ interface MeResponse {
   /** Who the token belongs to — a Solana public key. Echoes what we sent. */
   user_id: string;
   /**
-   * The artists this user controls. **Empty is a valid, complete answer** — an
+   * The artists this user controls, as `{ artist_id, name }` and nothing more —
+   * enough to name one and link to it. **Empty is a valid, complete answer** — an
    * audience account — not a failed or lesser login. Several is equally valid;
    * don't assume the first element or a length of one.
    */
-  artists: Artist[];
+  artists: ArtistIdentity[];
 }
 
 // ---------------------------------------------------------------------------
@@ -57,9 +58,11 @@ interface MeResponse {
 // ---------------------------------------------------------------------------
 
 /**
- * Ask for something to sign. Challenges are single-use with a 5-minute TTL, and
- * a failed verify burns one — always request a fresh challenge per attempt
- * rather than retrying with a spent `challengeId`.
+ * Ask for something to sign. Single-use, 5-minute TTL. A wrong signature no
+ * longer burns it — the server counts attempts and only spends the challenge on
+ * success or at its cap — so asking for a fresh one per attempt is a choice, not
+ * a requirement. We do anyway: it costs one request, keeps this flow stateless,
+ * and the server evicts a wallet's oldest challenges past a cap of its own.
  */
 export const getChallenge = (walletAddress: string) =>
   apiFetch<ChallengeResponse>('/slopbop/auth/challenge', {
@@ -67,7 +70,7 @@ export const getChallenge = (walletAddress: string) =>
     body: JSON.stringify({ walletAddress }),
   });
 
-/** Trade a signed challenge for a session token. 401 = challenge spent/expired, or bad signature. */
+/** Trade a signed challenge for a session token. 401 carries a `reason`. */
 export const verifyWallet = (data: VerificationData) =>
   apiFetch<VerifyResponse>('/slopbop/auth/verify', {
     method: 'POST',
@@ -76,6 +79,58 @@ export const verifyWallet = (data: VerificationData) =>
 
 /** Who the current token belongs to, and what it controls. 401 = session over. */
 export const fetchMe = () => apiFetch<MeResponse>('/slopbop/auth/me');
+
+/**
+ * Revoke the session row this token names. Takes the token explicitly rather than
+ * reading the store, because the caller has already cleared it — see `endSession`.
+ */
+const revokeSession = (token: string) =>
+  apiFetch<{ success: boolean }>('/slopbop/auth/logout', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+/**
+ * One device this wallet is signed in on. `jti` names a session so it can be
+ * pointed at; it is not a credential, which is why showing someone their own is
+ * safe.
+ */
+export interface SessionInfo {
+  jti: string;
+  issued_at: string;
+  expires_at: string;
+  last_seen_at: string;
+  user_agent?: string;
+  /** The session this request arrived on. */
+  current: boolean;
+}
+
+interface SessionsResponse {
+  success: boolean;
+  sessions: SessionInfo[];
+}
+
+/** Where this wallet is signed in, newest first. The read behind a devices screen. */
+export const listSessions = () =>
+  apiFetch<SessionsResponse>('/slopbop/auth/sessions').then(r => r.sessions);
+
+/**
+ * End every session this wallet holds, including this one — the "I lost a phone"
+ * action. Clears locally too, since this one is among the revoked.
+ */
+export async function endAllSessions(): Promise<number> {
+  try {
+    const { revoked } = await apiFetch<{ success: boolean; revoked: number }>(
+      '/slopbop/auth/logout-all',
+      { method: 'POST' },
+    );
+    return revoked;
+  } finally {
+    // Unlike `endSession`, this one awaits first: the count is the answer, and
+    // dropping the token before the call would leave nothing to authenticate it.
+    session.signOut();
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Flows — the only things that write to the session store
@@ -99,15 +154,14 @@ export async function signInWithWallet(
     // and a failed verify spends one, so retrying an old id can only fail.
     const { challengeId, message } = await getChallenge(walletAddress);
 
-    // `message` goes back untouched — the server string-compares it, so any
-    // re-encoding or trim fails the check. The signature's wire format is
-    // `services/solana`'s business.
+    // The message isn't sent back: the server verifies against its stored copy,
+    // so an echo could only ever agree or disagree with it. The signature's wire
+    // format is `services/solana`'s business.
     const signature = await signMessageBase58(signMessage, message);
 
     const { token, expires_in } = await verifyWallet({
       walletAddress,
       challengeId,
-      message,
       signature,
     });
     session.setCredentials(walletAddress, token, expires_in);
@@ -166,6 +220,22 @@ export async function bootSession(): Promise<void> {
     return;
   }
   if (session.getUserId()) await restoreAccount();
+}
+
+/**
+ * Sign out. Clears locally **first** so the UI updates on the spot, then revokes
+ * the row in the background — sessions are rows now, and a token dropped only on
+ * the client keeps working until its TTL.
+ *
+ * The revoke is deliberately not awaited and its failure is swallowed: someone
+ * who pressed sign-out is signed out whether or not the network agreed, and the
+ * row expires on its own if the request never lands. Awaiting it would put a
+ * network round-trip between the tap and the screen changing.
+ */
+export function endSession(): void {
+  const token = session.getToken();
+  session.signOut();
+  if (token) void revokeSession(token).catch(() => {});
 }
 
 function messageFor(err: unknown): string {

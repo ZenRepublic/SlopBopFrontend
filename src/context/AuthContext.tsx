@@ -3,10 +3,10 @@ import { useWallet } from '@solana/wallet-adapter-react';
 import {
   getSnapshot,
   bootSession,
+  endSession,
   signInWithWallet,
-  signOut,
   subscribe,
-  type Artist,
+  type ArtistIdentity,
 } from '../services/slopbop';
 
 /**
@@ -34,8 +34,8 @@ export interface Auth {
   userId: string | null;
   /** A wallet has been proved. Independent of whether they control any artist. */
   isAuthed: boolean;
-  /** Artists this user controls. Empty is ordinary; several is allowed. */
-  artists: Artist[];
+  /** Artists this user controls — id and name only. Empty is ordinary; several is allowed. */
+  artists: ArtistIdentity[];
   /** A sign-in or account refresh is in flight. */
   loading: boolean;
   error: string | null;
@@ -61,10 +61,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // A token names one user. If the adapter switches to a different address the
-  // session no longer describes the person at the keyboard, so drop it.
+  // session no longer describes the person at the keyboard, so end it — and end
+  // it server-side, because a row left live is a token that still works.
   useEffect(() => {
     if (!userId || !publicKey) return;
-    if (publicKey.toBase58() !== userId) signOut();
+    if (publicKey.toBase58() !== userId) endSession();
   }, [publicKey, userId]);
 
   // Disconnecting the wallet ends the session too. Guarded on having actually
@@ -78,7 +79,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     if (wasConnected.current) {
       wasConnected.current = false;
-      signOut();
+      endSession();
     }
   }, [connected]);
 
@@ -89,9 +90,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await signInWithWallet(publicKey.toBase58(), signMessage);
   }, [publicKey, signMessage]);
 
-  // Wrapped rather than passed through: `signOut` takes an optional message, and
-  // handed straight to an onClick it would receive the click event as one.
-  const logout = useCallback(() => signOut(), []);
+  // Fire-and-forget: the local session is cleared synchronously inside
+  // `endSession`, so the UI updates now and the revoke lands when it lands.
+  const logout = useCallback(() => endSession(), []);
 
   const value: Auth = {
     userId,

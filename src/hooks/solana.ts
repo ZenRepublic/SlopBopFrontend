@@ -7,3 +7,4 @@
  * would only add a place for it to drift.
  */
 export * from './solana/useWalletConnect';
+export * from './solana/useSendTransaction';
