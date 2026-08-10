@@ -1,8 +1,9 @@
 import type { FormConfig } from '../../services/slopbop';
 
-// Field length caps, mirroring the backend's validation rules.
+// Field length caps, mirroring the backend's validation rules. The taste-answer
+// bounds are not here — they come down in `config.answer_length`, so the server
+// owns those numbers alone.
 export const NAME_MAX = 32;
-export const ESSAY_MAX = 300;
 export const EMAIL_MAX = 100;
 
 // Allowed-character / format rules, mirroring the backend. Name is a stage
@@ -22,8 +23,7 @@ export interface FormState {
   email: string;
   // statement index -> chosen 1–5. Missing = unanswered.
   scale: Record<number, number>;
-  personality: string[];
-  craft: string[];
+  taste: string[];
 }
 
 export function validateIdentity(state: FormState, config: FormConfig): FieldErrors {
@@ -74,23 +74,23 @@ export function validateScale(state: FormState, config: FormConfig): FieldErrors
   return {};
 }
 
-// Both essay sections validate identically; `kind` picks the field name and the
-// wording, both of which the backend distinguishes.
-export function validateEssays(
-  answers: string[],
-  questions: string[],
-  kind: 'personality' | 'craft',
-): FieldErrors {
-  const field = `${kind}_answers`;
+// One answer is in range when its trimmed length sits inside config.answer_length
+// — the same check the backend runs, and what turns a step dot green.
+export function isAnswerComplete(answer: string, { min, max }: FormConfig['answer_length']) {
+  const length = answer.trim().length;
+  return length >= min && length <= max;
+}
+
+export function validateTaste(answers: string[], config: FormConfig): FieldErrors {
+  const { taste_questions: questions, answer_length: bounds } = config;
 
   if (answers.length !== questions.length) {
-    return { [field]: `Expected exactly ${questions.length} ${kind} answers.` };
+    return { taste_answers: `Expected exactly ${questions.length} taste answers.` };
   }
-  if (answers.some(a => a.trim().length === 0)) {
-    return { [field]: `Each ${kind} answer must be non-empty.` };
-  }
-  if (answers.some(a => a.trim().length > ESSAY_MAX)) {
-    return { [field]: `Each ${kind} answer must be ${ESSAY_MAX} characters or fewer.` };
+  if (answers.some(a => !isAnswerComplete(a, bounds))) {
+    return {
+      taste_answers: `Each taste answer must be between ${bounds.min} and ${bounds.max} characters.`,
+    };
   }
   return {};
 }

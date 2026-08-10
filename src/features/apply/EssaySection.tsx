@@ -1,35 +1,38 @@
 import { useState } from 'react';
 import { FormSection, StepNav, TextAreaField } from '../../primitives/form';
+import { isAnswerComplete } from './validation';
+import type { FormConfig } from '../../services/slopbop';
 
 interface EssaySectionProps {
   questions: string[];
   answers: string[];
   onAnswerChange: (index: number, value: string) => void;
-  maxLength: number;
-  // Group-level error (personality_answers / craft_answers).
+  // Length bounds from the config — the max caps typing, the min gates the step
+  // dot and drives the counter's warning state.
+  bounds: FormConfig['answer_length'];
+  // Group-level error (taste_answers).
   error?: string;
-  // Accessible name for the step buttons, e.g. "Personality questions".
+  // Accessible name for the step buttons, e.g. "Taste questions".
   ariaLabel: string;
 }
 
-// One open-answer section as a stepped questionnaire: numbered buttons switch
-// between questions, one is shown at a time, and each turns green once
-// answered. Rendered twice — once for personality, once for craft — since the
-// config hands the two sets pre-split so they can be labelled apart. The
-// section's own heading is the step header, outside the card.
+// The open-answer section as a stepped questionnaire: numbered buttons switch
+// between questions, one is shown at a time, and each turns green once answered
+// within bounds. The counter is the only place the minimum is visible, so it
+// stays on screen while typing rather than waiting for a submit.
 export function EssaySection({
   questions,
   answers,
   onAnswerChange,
-  maxLength,
+  bounds,
   error,
   ariaLabel,
 }: EssaySectionProps) {
   const [active, setActive] = useState(0);
-  const complete = questions.map((_, i) => {
-    const answer = answers[i] ?? '';
-    return answer.trim().length > 0 && answer.trim().length <= maxLength;
-  });
+  const complete = questions.map((_, i) => isAnswerComplete(answers[i] ?? '', bounds));
+
+  const length = (answers[active] ?? '').trim().length;
+  const short = length < bounds.min;
 
   return (
     <FormSection error={error}>
@@ -39,9 +42,12 @@ export function EssaySection({
         required
         value={answers[active] ?? ''}
         onChange={value => onAnswerChange(active, value)}
-        maxLength={maxLength}
-        rows={4}
+        maxLength={bounds.max}
+        rows={6}
       />
+      <p className={`text-xs text-right ${short ? 'text-danger' : 'text-muted'}`}>
+        {short ? `${bounds.min - length} more characters needed` : `${length}/${bounds.max}`}
+      </p>
       <div className="flex justify-center">
         <StepNav
           count={questions.length}

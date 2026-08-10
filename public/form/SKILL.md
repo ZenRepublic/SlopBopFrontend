@@ -48,19 +48,20 @@ The response tells you exactly what to fill in and the allowed values:
 
 ```jsonc
 {
-  "scale": ["statement 1", "statement 2", ...],       // personality statements (see Step 2.5)
-  "personality_questions": ["q1", "q2", "q3", "q4"],  // who your owner is (see Step 2.6)
-  "craft_questions": ["q1", "q2", "q3", "q4"],        // what their music is (see Step 2.6)
-  "zodiac": ["Aries", "Taurus", ...],                 // pick exactly one
+  "scale": ["statement 1", "statement 2", ...],   // personality statements (see Step 2.5)
+  "taste_questions": ["q1", "q2", ...],           // open questions (see Step 2.6)
+  "answer_length": { "min": 100, "max": 500 },    // per-answer character bounds
+  "zodiac": ["Aries", "Taurus", ...],             // pick exactly one
   "genres": {
-    "max_select": 3,                                   // how many genres you may pick
-    "options": ["Pop", "Hip-Hop", ...]                 // pick from these
+    "max_select": 3,                               // how many genres you may pick
+    "options": ["Pop", "Hip-Hop", ...]             // pick from these
   }
 }
 ```
 
-Read it fresh each time — the `scale` statements, the two question arrays, the
-`zodiac` list, and `genres` are the source of truth for what's valid.
+Read it fresh each time — the `scale` statements, `taste_questions`,
+`answer_length`, the `zodiac` list, and `genres` are the source of truth for
+what's valid.
 
 ## Step 2 — Compose the answers
 
@@ -74,8 +75,7 @@ re-validates and will reject anything out of bounds.
 | `zodiac_sign`           | Exactly one value from `config.zodiac`.                         |
 | `genres`                | 1 to `max_select` distinct values from `config.genres.options`. |
 | `scale_answers`         | Array of ints (see 2.5).                                        |
-| `personality_answers`   | Array of 4 plain strings (see 2.6).                             |
-| `craft_answers`         | Array of 4 plain strings (see 2.6).                             |
+| `taste_answers`         | One plain string per `config.taste_questions` (see 2.6).        |
 | `email`                 | Optional. Standard email, ≤100 chars, or null/omitted.          |
 
 **Contact (`email`):** selected applicants are notified through the contact they
@@ -99,26 +99,29 @@ Example: if `config.scale` has 3 statements and your owner would strongly agree
 with the first, be neutral on the second, and disagree with the third →
 `scale_answers: [5, 3, 2]`.
 
-### Step 2.6 — The open questions (`personality_answers`, `craft_answers`)
+### Step 2.6 — The open questions (`taste_answers`)
 
-There are two sets of 4 questions. `config.personality_questions` asks who your
-owner is; `config.craft_questions` asks what their music is. Answer **all eight**,
-in your owner's voice.
+`config.taste_questions` asks about your owner's taste — what they love, what
+they watch, how they make a song, what they can't stand. Answer **every one** of
+them, in your owner's voice.
 
-Each answer array is **plain strings, in the same order as its question array** —
-`personality_answers[0]` answers `personality_questions[0]`, and so on. The
-server pairs them by position and records the question text itself.
+`taste_answers` is **plain strings, in the same order as the question array** —
+`taste_answers[0]` answers `taste_questions[0]`, and so on. The server pairs them
+by position and records the question text itself.
 
 ```jsonc
-"personality_answers": ["answer to q1", "answer to q2", "answer to q3", "answer to q4"],
-"craft_answers":       ["answer to q1", "answer to q2", "answer to q3", "answer to q4"]
+"taste_answers": ["answer to q1", "answer to q2", "answer to q3", ...]
 ```
 
 > **Do not send `{"question": ..., "answer": ...}` objects** — they are rejected
 > with "must be text". Strings only, one per question, in config order.
 
-Each answer is 1–300 chars. These answers strongly shape the artist, so make
-them specific and characterful.
+Each answer must be between `config.answer_length.min` and
+`config.answer_length.max` characters, measured after trimming whitespace —
+currently **100–500**. The minimum is deliberate: this application is for people
+who want a synthetic artist as their alter ego, and a one-line answer cannot
+build one. Write a real paragraph per question, specific and characterful. These
+answers shape the artist more than anything else in the form.
 
 ### Full payload example
 
@@ -127,14 +130,9 @@ them specific and characterful.
   "name": "neon_kid",
   "gender": "female",
   "scale_answers": [5, 2, 4, 3, 5],
-  "personality_answers": [
-    "I'm the one who stays up after everyone leaves the party.",
+  "taste_answers": [
+    "A full paragraph, 100–500 characters, in your owner's voice — the album they'd defend at 2am and the exact reason it got them, not just its title. Specific beats tasteful here.",
     "...",
-    "...",
-    "..."
-  ],
-  "craft_answers": [
-    "Synths that sound like a bus window at 3am.",
     "...",
     "...",
     "..."

@@ -3,8 +3,7 @@ import { IdentityStep } from './IdentityStep';
 import { EssaySection } from './EssaySection';
 import { LikertSection } from './LikertSection';
 import {
-  ESSAY_MAX,
-  validateEssays,
+  validateTaste,
   validateIdentity,
   validateScale,
   type FieldErrors,
@@ -16,7 +15,7 @@ import { type ApplicationPayload } from '../../services/slopbop';
 
 // The step name in the progress line is the only heading a step gets — the
 // cards hold nothing but their fields.
-const STEPS = ['Identity', 'Archetype Test', 'Personality', 'Craft'] as const;
+const STEPS = ['Identity', 'Archetype Test', 'Taste'] as const;
 
 // Which step owns each payload field, so a 400 can drop the user on the step
 // that needs fixing. Keys match the backend's error keys exactly.
@@ -27,10 +26,11 @@ const FIELD_STEP: Record<string, number> = {
   genres: 0,
   email: 0,
   scale_answers: 1,
-  personality_answers: 2,
-  craft_answers: 3,
+  taste_answers: 2,
 };
 
+// `taste` starts empty and is indexed against the config's question list, so the
+// number of questions is the server's to change.
 const EMPTY_STATE: FormState = {
   name: '',
   gender: null,
@@ -38,8 +38,7 @@ const EMPTY_STATE: FormState = {
   genres: [],
   email: '',
   scale: {},
-  personality: ['', '', '', ''],
-  craft: ['', '', '', ''],
+  taste: [],
 };
 
 export default function ApplicationForm() {
@@ -68,20 +67,24 @@ export default function ApplicationForm() {
     edit(prev => ({ ...prev, scale: { ...prev.scale, [index]: value } }));
   const resetScale = () => patch({ scale: {} });
 
-  const setEssayAnswer = (kind: 'personality' | 'craft', index: number, value: string) =>
-    edit(prev => ({
-      ...prev,
-      [kind]: prev[kind].map((a, i) => (i === index ? value : a)),
-    }));
+  const setTasteAnswer = (index: number, value: string) =>
+    edit(prev => {
+      const taste = [...prev.taste];
+      taste[index] = value;
+      return { ...prev, taste };
+    });
 
   // Client-side mirror of the backend's rules, per step. Server errors are
   // layered on top — they're the authoritative answer for the same keys.
+  // Answers are read through the config's question list so the count is always
+  // the server's, whatever `state.taste` happens to hold.
+  const tasteAnswers = config ? config.taste_questions.map((_, i) => state.taste[i] ?? '') : [];
+
   const stepErrors: FieldErrors[] = config
     ? [
         validateIdentity(state, config),
         validateScale(state, config),
-        validateEssays(state.personality, config.personality_questions, 'personality'),
-        validateEssays(state.craft, config.craft_questions, 'craft'),
+        validateTaste(tasteAnswers, config),
       ]
     : STEPS.map(() => ({}));
 
@@ -130,8 +133,7 @@ export default function ApplicationForm() {
       // Every answer array is built by mapping the config, so position is the
       // config's order — never state's iteration order.
       scale_answers: config.scale.map((_, i) => state.scale[i]),
-      personality_answers: config.personality_questions.map((_, i) => state.personality[i].trim()),
-      craft_answers: config.craft_questions.map((_, i) => state.craft[i].trim()),
+      taste_answers: tasteAnswers.map(a => a.trim()),
       zodiac_sign: state.zodiac,
       genres: state.genres,
       email: state.email.trim() || null,
@@ -210,23 +212,12 @@ export default function ApplicationForm() {
 
         {step === 2 && (
           <EssaySection
-            questions={config.personality_questions}
-            answers={state.personality}
-            onAnswerChange={(i, value) => setEssayAnswer('personality', i, value)}
-            maxLength={ESSAY_MAX}
-            error={shown(2).personality_answers}
-            ariaLabel="Personality questions"
-          />
-        )}
-
-        {step === 3 && (
-          <EssaySection
-            questions={config.craft_questions}
-            answers={state.craft}
-            onAnswerChange={(i, value) => setEssayAnswer('craft', i, value)}
-            maxLength={ESSAY_MAX}
-            error={shown(3).craft_answers}
-            ariaLabel="Craft questions"
+            questions={config.taste_questions}
+            answers={tasteAnswers}
+            onAnswerChange={setTasteAnswer}
+            bounds={config.answer_length}
+            error={shown(2).taste_answers}
+            ariaLabel="Taste questions"
           />
         )}
 
