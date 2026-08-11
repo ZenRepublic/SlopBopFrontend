@@ -32,11 +32,28 @@ export interface ApplicationPayload {
   email?: string | null;    // optional; standard email, <=100
 }
 
+// The archetype the applicant scored, served whole so the result screen needs no
+// second request. Authored in the simulator repo and pushed to Mongo, so the prose
+// changes without a deploy on either side.
+export interface ArchetypeDetail {
+  id: string;           // matches ApplicationResult.archetype
+  title: string;        // e.g. 'THE DELULU'
+  description: string;  // the one-line third-person tl;dr
+  body: string;         // raw markdown, from '## The surface' down — render it
+  image_url: string;    // '' when no portrait exists yet; show the image only if set
+}
+
 // Returned on a successful 201. `archetype` is the derived personality result
-// (12 possible values). `scale_answers` are never returned.
+// (one of 9). `scale_answers` are never returned.
+//
+// `archetype_detail` is nullable because the server looks it up separately by id.
+// The upload pipeline cross-checks that every scorable id has a doc, so null
+// shouldn't happen — but a missing one must degrade to the plain thank-you
+// screen rather than blank it.
 export interface ApplicationResult {
   name: string;
   archetype: string;
+  archetype_detail: ArchetypeDetail | null;
 }
 
 // Discriminated outcome of submit: success carries the result, validation
