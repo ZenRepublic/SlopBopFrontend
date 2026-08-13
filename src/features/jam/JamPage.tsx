@@ -135,27 +135,23 @@ export default function JamPage() {
             release" phase to hide.
 
             While the jam runs, the list IS the scoreboard: bops decide the
-            winner outright, so it opens most-bopped-first and the line above
-            says what the order means. Once one has won the list is the wrong
-            shape entirely — there's exactly one song left and nothing to
-            compare it against — so `JamWinner` takes over. */}
+            winner outright, so it opens most-bopped-first. Nothing explains that
+            here — the intro and the tracklist sit directly against each other,
+            and a line of copy wedged between them reads as clutter. The
+            submissions panel below is where the rules get stated.
+
+            Once a song has won the list is the wrong shape entirely — there's
+            exactly one left and nothing to compare it against — so `JamWinner`
+            takes over. */}
         {resolved ? (
           winner && <JamWinner song={winner} toTrack={toTrack} />
         ) : (
-          <div className="flex flex-col gap-md">
-            {live && (
-              <p className="text-sm text-muted">
-                The most-bopped song wins — <span className="text-accent">bop the ones you
-                like</span> to push them up.
-              </p>
-            )}
-            <SongList
-              songs={songs}
-              onRefetch={refetch}
-              toTrack={toTrack}
-              defaultSort={live ? 'bops-desc' : 'release'}
-            />
-          </div>
+          <SongList
+            songs={songs}
+            onRefetch={refetch}
+            toTrack={toTrack}
+            defaultSort={live ? 'bops-desc' : 'release'}
+          />
         )}
 
         {requestStatus && jamStatus && (
