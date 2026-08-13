@@ -73,6 +73,16 @@ export class ApiError extends Error {
   }
 }
 
+/**
+ * What a 403 from an owner-gated write means, in one wording, for every one of
+ * them. They all answer an unowned artist and an unknown one identically —
+ * deliberately, so a caller can't probe which artists exist — so there is
+ * exactly one thing to say. It lives here because it belongs to the refusal, not
+ * to any one resource; it used to sit in `jams.ts`, which stopped making sense
+ * the day jams had no owner writes left.
+ */
+export const NOT_YOUR_ARTIST = "This wallet doesn't manage that artist.";
+
 // `headers` is narrowed to a plain record so it can be merged rather than
 // replaced. The whole-object spread that RequestInit invites would drop
 // Content-Type and the bearer token the moment a caller passed a header.

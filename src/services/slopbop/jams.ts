@@ -1,139 +1,94 @@
 import { apiFetch } from './client';
+import type { Collection, RequestStatus } from './collections';
+import type { Song } from './songs';
 
 /**
- * The jam's own surface: the 7-day clock, and the two writes only the artist who
- * owns it can make. Reads stay generic — a jam is fetched with `fetchCollection`
- * like any other collection, which is why `JamStatus` is consumed from there.
+ * The jam's surface: the phases one moves through, and the one read that needs
+ * no collection id.
  *
- * Both writes require a wallet session; `apiFetch` attaches the bearer token.
+ * **There are no jam writes here.** Starting a jam and naming its winner both
+ * moved behind the backend's curation key, so no wallet session can reach
+ * either — a jam is something the label runs, not something an artist's owner
+ * makes. The winner isn't picked at all any more: bops decide it.
+ *
+ * Reads stay generic — a jam is fetched with `fetchCollection` like any other
+ * collection, which is why `JamStatus` is consumed from there.
  */
 
 // Where a jam is in its life, derived server-side from the clock and never
 // stored. Orthogonal to `RequestStatus` — see `JamStatus` below.
 export type JamPhase =
-  // Before the submission deadline. Note this says nothing about whether a
+  // It exists but hasn't opened. Count down to `submission_start`.
+  | 'scheduled'
+  // Inside the submission window. Note this says nothing about whether a
   // submission would be accepted right now: a jam that hit capacity on day two
   // is closed to submissions and still `open`.
   | 'open'
-  // Submissions shut; the artist's 24 hours to name the winner.
-  | 'selecting'
-  // Those 24 hours elapsed with no pick made. There is no auto-pick — the jam
-  // simply sits here until someone decides what to do about it.
-  | 'overdue'
-  // A song was chosen. Terminal: a resolved jam stays resolved whatever the
-  // clock says.
-  | 'resolved';
+  // Submissions shut, winner being tallied. Nothing for anyone to do but wait —
+  // the count decides it, so there's no one to chase.
+  | 'awaiting_resolution'
+  // A song won. Terminal: a resolved jam stays resolved whatever the clock says.
+  | 'resolved'
+  // It ran its window out with nobody entering, so there was nothing to resolve.
+  // Rare, and terminal.
+  | 'closed';
 
 /**
- * A jam's phase and the two moments it turns on. Returned as `jam_status` on the
+ * A jam's phase and the moments it turns on. Returned as `jam_status` on the
  * collection detail read, jam-type only.
  *
  * **Not the same question as `request_status`**, and the two are deliberately not
  * merged: `request_status.open` is "can I submit right now" (capacity included)
- * and is the only thing that should gate the submit form; `phase` is "where is
- * this jam in its 7 days". A jam that filled early is closed to submissions while
- * still in its `open` phase, because the selection window opens at the 6-day mark
- * either way — every jam is exactly 7 days.
+ * and is the only thing that should gate the submit form; `phase` is where the
+ * event itself has got to. A jam that filled early is closed to submissions
+ * while still in its `open` phase, because the window runs on the clock either
+ * way.
  */
 export interface JamStatus {
   phase: JamPhase;
-  /** When submissions shut. Null on jams created before jams had a clock. */
+  /** When submissions open. Real now that a jam can be scheduled ahead. */
+  submission_start: string | null;
+  /** When submissions shut. */
   submission_deadline: string | null;
-  /** When the artist's pick is due — 24h after the submission deadline. */
-  selection_deadline: string | null;
+  /** When the winner was named. Null until `resolved`. */
+  resolved_at: string | null;
   /**
    * The winner, once there is one. The winning song has *left* the collection
-   * (that's what promotion is), so a resolved jam's detail read returns
-   * `songs: []` — fetch the winner by this id with `fetchSong`.
+   * (that's what promotion is — its `collection_id` is cleared and the also-rans
+   * are deleted), so a resolved jam's detail read returns `songs: []`. Fetch the
+   * winner by this id with `fetchSong`; it carries the jam's `cover_url`, which
+   * is what ties it back to the event.
    */
   selected_song_id: string | null;
 }
 
-/**
- * What a 403 from either jam write means, in one wording. Both endpoints answer
- * an unowned artist and an unknown one identically — that's deliberate, so a
- * caller can't probe which artists exist — so there is exactly one thing to say.
- */
-export const NOT_YOUR_ARTIST = "This wallet doesn't manage that artist.";
-
-/** What the server derived for a jam it just created. */
-export interface CreatedJam {
-  collection_id: string;
-  /** Display label — a count of jams, not an identifier. Don't key on it. */
-  jam_number: number;
-  title: string;
-  cover_url: string;
-  max_tracks: number;
-}
-
-/** What resolving a jam actually did. */
-export interface JamSelectionResult {
-  collection_id: string;
-  selected_song_id: string;
-  /** The jam's cover, which the winner inherited on its way out. */
-  cover_url: string;
-  /** How many also-rans were deleted. */
-  deleted_songs: number;
-}
-
-interface CreateJamResponse extends CreatedJam {
+interface CurrentJamResponse {
   success: boolean;
-}
-
-interface SelectionResponse extends JamSelectionResult {
-  success: boolean;
+  collection: Collection | null;
+  songs: Song[];
+  request_status?: RequestStatus;
+  jam_status?: JamStatus;
 }
 
 /**
- * Start a jam for an artist this wallet owns. `cta` is the artist's own pitch to
- * fans, quoted on the jam card; everything else — number, title, cover art,
- * capacity, deadline — is derived server-side, so there's nothing here a form
- * can get wrong.
+ * The label's current jam, across the whole roster — the one jam read that takes
+ * no collection id, and the reason a jam can headline the landing page instead
+ * of hiding on whichever artist happens to be hosting.
  *
- * **Slow on purpose and not idempotent.** It renders the cover and uploads it to
- * Arweave before the insert, so expect several seconds — and two calls make two
- * jams with two uploads. Callers must not let it fire twice (`useCreateJam`
- * holds that guard).
+ * It answers in the exact shape of `fetchCollection`, so the same components
+ * render it. Two things to hold onto:
  *
- * 403 = this wallet doesn't own that artist. Unknown artist answers identically,
- * so a caller can't probe which artists exist.
+ *   - It returns the most recently *started* jam whatever its phase, so between
+ *     events the last one keeps showing its winner rather than the page going
+ *     blank.
+ *   - Never having run one is a 200 with `collection: null`, not a 404. "There
+ *     isn't one" is a fact about the label, not a missing resource — don't treat
+ *     it as an error.
  */
-export const createJam = (artistId: string, cta?: string) =>
-  apiFetch<CreateJamResponse>('/slopbop/collections/jams', {
-    method: 'POST',
-    body: JSON.stringify({ artist_id: artistId, ...(cta ? { cta } : {}) }),
-  }).then(r => ({
-    collection_id: r.collection_id,
-    jam_number: r.jam_number,
-    title: r.title,
-    cover_url: r.cover_url,
-    max_tracks: r.max_tracks,
-  }));
-
-/**
- * Name the jam's winner. **Destructive and one-way**: the chosen song becomes a
- * standalone single carrying the jam's cover, and every other song in the jam is
- * deleted. Confirm before calling — there is no undo.
- *
- * The jam document itself survives, resolved rather than removed.
- *
- * Errors worth telling apart, by `ApiError.status`:
- *   403  this wallet doesn't own the artist
- *   404  that song isn't in this jam
- *   409  not in the selecting phase (still open, already resolved, or the
- *        window closed) — refetch the jam and re-render off the fresh phase
- *
- * Re-sending the *same* song against an already-resolved jam succeeds rather
- * than 409ing: resolving is three un-transacted writes, so a retry is how a
- * half-finished jam gets finished.
- */
-export const selectJamWinner = (collectionId: string, songId: string) =>
-  apiFetch<SelectionResponse>(`/slopbop/collections/jams/${collectionId}/selection`, {
-    method: 'POST',
-    body: JSON.stringify({ song_id: songId }),
-  }).then(r => ({
-    collection_id: r.collection_id,
-    selected_song_id: r.selected_song_id,
-    cover_url: r.cover_url,
-    deleted_songs: r.deleted_songs,
+export const fetchCurrentJam = () =>
+  apiFetch<CurrentJamResponse>('/slopbop/collections/jams/current').then(r => ({
+    collection: r.collection,
+    songs: r.songs ?? [],
+    requestStatus: r.request_status ?? null,
+    jamStatus: r.jam_status ?? null,
   }));

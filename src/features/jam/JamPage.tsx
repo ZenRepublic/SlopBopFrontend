@@ -2,11 +2,13 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
 import { useJam } from '../../hooks/collections';
+import { useSong } from '../../hooks/songs';
 import { useArtist } from '../../hooks/artists';
-import { songCredit } from '../../services/slopbop';
+import { songCredit, type Song } from '../../services/slopbop';
 import SongList from '../../components/songlist/SongList';
 import Img from '../../primitives/Img';
 import JamSubmissions from './JamSubmissions';
+import JamWinner from './JamWinner';
 
 const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -20,8 +22,13 @@ function formatDate(iso: string): string {
 
 export default function JamPage() {
   const { id } = useParams<{ id: string }>();
-  const { jam, songs, requestStatus, loading: jamLoading, refetch } = useJam(id ?? '');
+  const { jam, songs, requestStatus, jamStatus, loading: jamLoading, refetch } = useJam(id ?? '');
   const { artist, loading: artistLoading } = useArtist(jam?.artist_id ?? '');
+  // A resolved jam comes back with `songs: []` — the winner was promoted out of
+  // the collection and the also-rans deleted — so the one song worth showing is
+  // the one thing the jam's own read can't hand us. An empty id is idle, which
+  // is every other phase.
+  const { song: winner } = useSong(jamStatus?.selected_song_id ?? '');
 
   // Toggles the cover image out for a QR code pointing at this same page, so a
   // host can flash the jam on screen and let people scan in to submit.
@@ -35,7 +42,10 @@ export default function JamPage() {
     return () => document.body.classList.remove('jam-world');
   }, []);
 
-  const loading = jamLoading || artistLoading;
+  // `!jam` and not just `loading`: an open jam polls itself for the live
+  // standings, and each poll raises `loading` again — spinnering on that would
+  // blank the page every 30 seconds.
+  const loading = (jamLoading && !jam) || artistLoading;
 
   if (loading) {
     return (
@@ -45,6 +55,11 @@ export default function JamPage() {
     );
   }
 
+  const resolved = jamStatus?.phase === 'resolved';
+  // Still being fought over — submissions in, nothing settled. Both phases show
+  // the standings, because bops carry on counting right up to the tally.
+  const live = jamStatus?.phase === 'open' || jamStatus?.phase === 'awaiting_resolution';
+
   if (!jam) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -52,6 +67,21 @@ export default function JamPage() {
       </div>
     );
   }
+
+  // Every list on this page reads the same way — including the promoted winner,
+  // which inherited the jam's cover on its way out.
+  const toTrack = (song: Song) => ({
+    id: song._id,
+    title: song.title || 'Untitled',
+    coverUrl: song.cover_url || jam.cover_url,
+    audioUrl: song.audio_url || '',
+    duration: song.duration,
+    lyrics: song.lyrics,
+    author: songCredit(song, artist),
+    bops: song.bops,
+    artistId: song.artist_id,
+    artistName: artist?.name,
+  });
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -102,31 +132,54 @@ export default function JamPage() {
       <div className="flex flex-col gap-lg px-lg pb-lg">
         {/* Songs first, and always shown: jam tracks drip in one at a time as
             each submission is recorded, not as a batch — so there's no "before
-            release" phase to hide. */}
-        <SongList
-          songs={songs}
-          onRefetch={refetch}
-          toTrack={song => ({
-            id: song._id,
-            title: song.title || 'Untitled',
-            coverUrl: song.cover_url || jam.cover_url,
-            audioUrl: song.audio_url || '',
-            duration: song.duration,
-            lyrics: song.lyrics,
-            author: songCredit(song, artist),
-            bops: song.bops,
-            artistId: song.artist_id,
-            artistName: artist?.name,
-          })}
-        />
+            release" phase to hide.
 
-        {requestStatus && (
+            While the jam runs, the list IS the scoreboard: bops decide the
+            winner outright, so it opens most-bopped-first and the line above
+            says what the order means. Once one has won the list is the wrong
+            shape entirely — there's exactly one song left and nothing to
+            compare it against — so `JamWinner` takes over. */}
+        {resolved ? (
+          winner && <JamWinner song={winner} toTrack={toTrack} />
+        ) : (
+          <div className="flex flex-col gap-md">
+            {live && (
+              <p className="text-sm text-muted">
+                The most-bopped song wins — <span className="text-accent">bop the ones you
+                like</span> to push them up.
+              </p>
+            )}
+            <SongList
+              songs={songs}
+              onRefetch={refetch}
+              toTrack={toTrack}
+              defaultSort={live ? 'bops-desc' : 'release'}
+            />
+          </div>
+        )}
+
+        {requestStatus && jamStatus && (
           <JamSubmissions
             jamId={jam._id}
             artistName={artist?.name}
             status={requestStatus}
+            phase={jamStatus.phase}
             refresh={refetch}
           />
+        )}
+
+        {/* Nobody entered, so there's no winner and no tracklist. Saying so is
+            the page's last job — an empty list with no explanation reads as a
+            page that failed to load. */}
+        {jamStatus?.phase === 'closed' && (
+          <>
+            <div className="border-t border-divider" />
+            <div className="frosted-card flex flex-col items-center gap-xs text-center py-sm">
+              <span className="text-2xl">🥀</span>
+              <p className="text-sm font-semibold">This jam ended empty.</p>
+              <p className="text-xs text-muted">Nobody wrote a song in time — no Single from this one.</p>
+            </div>
+          </>
         )}
       </div>
     </div>

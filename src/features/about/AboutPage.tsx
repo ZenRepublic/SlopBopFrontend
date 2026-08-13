@@ -2,21 +2,17 @@ import { useNavigate } from 'react-router-dom';
 import { Footer } from '../../components/Footer';
 import { SocialLinks } from '../../primitives/SocialLinks';
 import { Flourish } from '../../primitives/Flourish';
-import { useArtists } from '../../hooks/artists';
-import { useLiveJam } from '../../hooks/collections';
+import { useCurrentJam } from '../../hooks/collections';
 import { PublicJamCard } from './PublicJamCard';
 import { Testimonials } from './Testimonials';
 import { PROJECT_SOCIALS } from '../../config/socials';
 
 export default function AboutPage() {
   const navigate = useNavigate();
-  const { artists } = useArtists();
-  // Whichever artist is hosting is the one we show. Until the backend can
-  // answer "which jam is live right now" across the roster, that's the first
-  // artist's — the same one the featured card used to pick, and correct while
-  // one jam runs at a time.
-  const host = artists[0];
-  const { jam, refetch } = useLiveJam(host?.artist_id ?? '');
+  // The label's jam, not an artist's. One global read answers it now, and it
+  // holds the last jam between events — so this is null only before the very
+  // first one, which is the one case the section has nothing to say.
+  const { jam, jamStatus, refetch } = useCurrentJam();
 
   return (
     <div className="flex flex-col gap-xl py-lg">
@@ -51,17 +47,30 @@ export default function AboutPage() {
           card never had one either — it out-competes the card for the tap, and
           Roster is a permanent nav tab anyway.
 
-          The sentence stands whether or not a jam is running; the card is the
-          part that needs one. Between jams the offer is still worth stating —
-          it's a weekly thing, and "come back" is a real message. */}
-      <section className="flex flex-col gap-md px-md">
-        <h2 className="font-display text-2xl">Public Jams</h2>
-        <p className="text-base leading-relaxed">
-          Each week, we host a <span className="highlight">public jam</span> featuring one of our
-          signed artists, who produces the songs you write.
-        </p>
-        {jam && <PublicJamCard jam={jam} onExpire={refetch} />}
-      </section>
+          The whole section hangs on there being a jam: with none, the sentence
+          is a claim about a thing that isn't happening, and a heading over
+          nothing reads as broken. The line itself is static and stays an
+          invitation — no cadence promised, and no phase reported. Which phase
+          this jam is in, and whether you can still get a song in, is the jam
+          page's answer once you tap the card. */}
+      {jam && (
+        <section className="flex flex-col gap-md px-md">
+          <h2 className="font-display text-2xl">Public Jams</h2>
+          {/* One sentence per paragraph, on the section's own gap — the same
+              rhythm the commission teaser below runs on. A single block ran too
+              dense against the card underneath it. */}
+          <p className="text-base leading-relaxed">Slopbop artists love to jam!</p>
+          <p className="text-base leading-relaxed">
+            Whenever one of our artists is live on the mic, you can write lyrics for them to
+            produce into a song.
+          </p>
+          <p className="text-base leading-relaxed">
+            The most popular submission of the jam will become their new single, while the
+            others perish forever....
+          </p>
+          <PublicJamCard jam={jam} jamStatus={jamStatus} onExpire={refetch} />
+        </section>
+      )}
 
       <Flourish />
 

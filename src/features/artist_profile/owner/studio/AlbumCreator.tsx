@@ -40,9 +40,8 @@ const TRACKS_DEFAULT = 10;
  * inline bytes of an unsaved draft. Picking one *stages* it; nothing is written
  * until Create, and leaving the tool discards it.
  *
- * On success this leaves for the album, the way `JamCreator` leaves for the jam:
- * a brand new album is empty, and the only thing to do with it is write the
- * first track, which happens there.
+ * On success this leaves for the album: a brand new one is empty, and the only
+ * thing to do with it is write the first track, which happens there.
  */
 export default function AlbumCreator({ artistId, onDone }: Props) {
   // An artist may have one unfinished album at a time — the create endpoint
@@ -212,8 +211,8 @@ function CreateForm({ artistId, onDone }: Props) {
       </button>
 
       {/* Portals to the body like every Modal, so living inside the studio's box
-          doesn't stop it painting over it — the same reason JamCreator can hold
-          a LockScreen. Picking closes it and stages the url; Create still writes. */}
+          doesn't stop it painting over it. Picking closes it and stages the url;
+          Create still writes. */}
       <ImagePicker
         open={picking}
         onClose={() => setPicking(false)}

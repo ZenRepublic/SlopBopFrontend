@@ -58,7 +58,8 @@ interface Props {
   /** Cap this device at one submission for this collection: on success the
    * writer gives way to the thank-you notice, and stays that way on return
    * visits. Off by default — it takes as many submissions as the collection has
-   * room for. Mixtapes opt in; jams don't. */
+   * room for. Both crowdsourced types opt in; an album (owner-only) has no use
+   * for it. */
   oncePerDevice?: boolean;
   /** Refetch the collection so the count header advances and the window is
    * re-evaluated (capacity hit, or a 409 closes it). */

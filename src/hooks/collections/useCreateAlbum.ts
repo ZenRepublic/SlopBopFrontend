@@ -37,8 +37,8 @@ export type AlbumCreateOutcome =
  * the server re-checks regardless and its 400 lands in the same `errors` shape.
  *
  * Guarded against a double-fire. Creation is cheap — it stores a cover url
- * rather than rendering one, unlike `useCreateJam` — but it isn't idempotent
- * either: the second call doesn't make a second album, it comes back as
+ * rather than rendering one — but it isn't idempotent: the second call doesn't
+ * make a second album, it comes back as
  * `existing` pointing at the one the first call just made, which reads as an
  * error for something that in fact worked.
  *

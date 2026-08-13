@@ -99,7 +99,7 @@ difference drives every surface decision below.
 |---|---|---|---|---|
 | `album` | the artist — authored | none | permanent | `/albums/:id`, listed in Discography |
 | `mixtape` | a commissioning group | start → deadline, batch release | permanent | `/mixtapes/:id`, reached by its own link |
-| `jam` | anyone, first-come | none, capacity only | **deleted when the artist picks the winner** | `/jams/:id`, the LIVE card on the profile |
+| `jam` | anyone, one per device | start → deadline, capacity too | **the most-bopped song is promoted to a single; the rest are deleted** | `/jams/:id`, reached from the card on About |
 
 Two consequences worth holding onto:
 
@@ -109,8 +109,31 @@ Two consequences worth holding onto:
 - **Only the crowdsourced two carry `request_status`.** An album returns none, so
   the submission UI has nothing to gate on and simply never renders.
 
-A jam has no lifecycle flag — its *existence* is the live state, which is why
-"does this artist have a jam" (`useLiveJam`) is a filtered list read.
+**A jam is the label's event, not an artist's.** Nobody in the app starts one or
+picks its winner — both writes moved behind the backend's curation key, and the
+winner is settled by bops alone (ties broken by earliest submission). That's what
+promotes voting from decoration to the mechanic: while a jam runs, the tracklist
+*is* the standings, which is why `JamPage` opens it most-bopped-first and polls.
+
+So a jam is global, and `GET /collections/jams/current` (`useCurrentJam`) is the
+read that headlines About — no artist id, and it answers with the most recently
+started jam in *any* phase, so the last one keeps showing between events. A 200
+with `collection: null` means the label has never run one; that's a fact, not an
+error.
+
+**There is exactly one jam card**, `PublicJamCard` on About, and it owns its own
+phase copy. The artist profile used to carry a second, row-shaped one plus a LIVE
+badge; both were cosmetic, and keeping two cards honest about one jam meant a
+shared copy module *and* a client-side phase derivation duplicating the backend's
+clock — a lot of machinery for decoration. They're cut, and both those pieces went
+with them. Git has all three if the profile should announce a jam again.
+
+`JamStatus.phase` is the discriminator for everything:
+`scheduled → open → awaiting_resolution → resolved`, plus `closed` for a jam
+nobody entered. **The one that bites: a resolved jam's detail read returns
+`songs: []`** — the winner's `collection_id` was cleared and the also-rans
+deleted — so the winner is fetched separately by `jam_status.selected_song_id`.
+It inherits the jam's cover, which is what ties it back to the event.
 
 ---
 

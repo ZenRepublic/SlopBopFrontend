@@ -1,11 +1,9 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useArtist } from '../../hooks/artists';
-import { useLiveJam } from '../../hooks/collections';
 import ExpandableBio from './ExpandableBio';
 import TagPills from '../../primitives/TagPills';
 import Img from '../../primitives/Img';
 import Discography from './Discography';
-import LiveJamCard from './LiveJamCard';
 import OwnerActions from './owner/OwnerActions';
 
 export default function ArtistProfile() {
@@ -16,10 +14,6 @@ export default function ArtistProfile() {
   // client-side comparison against `owner_id` — the page re-fetches on login
   // because `useArtist` keys its cache on the session.
   const { artist, isOwner, loading, refetch } = useArtist(artistId);
-  // An open jam makes the artist "live" — see useLiveJam. It loads
-  // alongside the artist rather than gating the page: the profile is worth
-  // showing immediately, and the badge and card just appear when it resolves.
-  const { jam } = useLiveJam(artistId);
 
   if (loading) {
     return (
@@ -66,13 +60,6 @@ export default function ArtistProfile() {
 
       {/* Artist info — overlaps the hero image */}
       <div className="artist-hero-content flex flex-col gap-md p-lg">
-        {jam && (
-          <span className="live-badge">
-            <span className="live-badge__dot" />
-            Live
-          </span>
-        )}
-
         <h1 className="font-display text-xl text-left drop-shadow-lg">{artist.name}</h1>
 
         {artist.bio && (
@@ -82,15 +69,6 @@ export default function ArtistProfile() {
         )}
 
         <TagPills tags={artist.genres} />
-
-        {/* Pushed well off the genre pills — sitting one gap below them it read
-            as a continuation of the bio block. No section header: the card is
-            loud enough to announce itself, and titling it only added clutter. */}
-        {jam && (
-          <div className="mt-lg">
-            <LiveJamCard jam={jam} />
-          </div>
-        )}
       </div>
 
       {/* Discography */}

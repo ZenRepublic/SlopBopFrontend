@@ -9,6 +9,4 @@ export * from './collections/useCreateAlbum';
 export * from './collections/useDeleteAlbum';
 export * from './collections/useReleaseAlbum';
 export * from './collections/useJam';
-export * from './collections/useLiveJam';
-export * from './collections/useCreateJam';
-export * from './collections/useSelectJamWinner';
+export * from './collections/useCurrentJam';

@@ -31,8 +31,9 @@ export interface SongRequestResult {
 // Why a collection isn't accepting submissions. Shared by the collection
 // detail's `request_status.reason` and the submit endpoint's 409 body.
 export type RequestClosedReason =
-  | 'not_started'     // before submission_start (mixtape only — a jam has no window)
-  | 'deadline_passed' // past submission_deadline (mixtape only)
+  | 'not_started'     // before submission_start (both crowdsourced types — a jam
+                      // can be scheduled ahead of its own opening now)
+  | 'deadline_passed' // past submission_deadline (both crowdsourced types)
   | 'full'      // submission_count reached max_tracks
   | 'not_configured'  // max_tracks never authored
   // Legacy: the collection's type takes no submissions at all. It used to mean

@@ -13,6 +13,11 @@ interface Props {
  * of wondering where it went. An entry becomes real by gaining an `onClick`,
  * which is also what a missing one can't be given by accident.
  *
+ * Jam is *absent* rather than disabled, which is the opposite call and means
+ * something different: it isn't coming here at all. Jams are curation now — the
+ * label starts them behind an api key — so there is nothing an owner is waiting
+ * for.
+ *
  * Images aren't here: the image studio is a page of its own, reached from the
  * artist's own header. A menu of things this modal builds shouldn't hold one
  * entry that leaves the modal.
@@ -24,11 +29,6 @@ export default function StudioHome({ onOpen }: Props) {
         What would you like to create?
       </h2>
       <div className="flex flex-col gap-sm">
-        <StudioOption
-          label="Jam"
-          hint="Your fans write it. One song survives."
-          onClick={() => onOpen('jam')}
-        />
         <StudioOption
           label="Album"
           hint="Yours to write. Releases once it's full."

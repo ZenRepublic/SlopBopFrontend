@@ -30,7 +30,7 @@ const LOCK_ATTR = 'data-lock-screen';
  * **This is the only thing the caller needs.** A component behind a lock doesn't
  * also have to disable its own buttons or neuter its dismiss handler — those
  * guards can't be reached. What it *should* still do is guard the action itself
- * against re-entry (`useCreateJam` holds an in-flight ref), because that
+ * against re-entry (`useCreateAlbum` holds an in-flight ref), because that
  * protects against the caller's own logic, not the user's fingers.
  *
  * Appears after a 150ms delay (see lock-screen.css). The lock takes hold

@@ -129,7 +129,7 @@ interface DeleteResponse extends AlbumDeletionResult {
 
 /**
  * Start an album for an artist this wallet owns. Fast and cheap — it stores a
- * link, it doesn't render or upload anything (contrast `createJam`).
+ * link, it doesn't render or upload anything.
  *
  * Errors worth telling apart, by `ApiError.status`:
  *   400  a field is wrong — `body.error` says which. `validateAlbumDraft`

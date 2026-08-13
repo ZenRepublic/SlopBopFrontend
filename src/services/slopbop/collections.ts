@@ -17,12 +17,12 @@ import type { JamStatus } from './jams';
 //            make.
 //   mixtape  crowdsourced against a submission window and released as a batch —
 //            what a Mixtape Commission produces.
-//   jam      crowdsourced, each song published as it's produced. A 7-day timed
-//            event: 6 days of submissions (capped by capacity too), then 24
-//            hours for the artist to pick the one song that becomes a single —
-//            the rest are deleted. See `JamStatus` for the phases. The jam doc
-//            itself survives its own resolution, since numbering the next one
-//            counts the ones that came before.
+//   jam      crowdsourced, each song published as it's produced. A timed event
+//            the label runs: a submission window (capped by capacity too), then
+//            the most-bopped song is promoted to a single and the rest are
+//            deleted. See `JamStatus` for the phases. The jam doc itself
+//            survives its own resolution, since numbering the next one counts
+//            the ones that came before.
 //
 // The union is also the seam for future kinds (e.g. a `playlist` that resolves
 // an explicit song_id list instead).
@@ -64,13 +64,13 @@ export interface Collection {
   // jam card. Jam-only, and optional: absent falls back to a default line, so an
   // artist who writes nothing still has a call to action.
   cta?: string;
-  // Submission fields, returned by the list read. A mixtape uses the full window
-  // (start → deadline); a jam has a deadline but no start (6 days out, stamped at
-  // creation — so it closes on whichever comes first, filling up or running out
-  // of time); an album has neither clock, but does have a capacity. Prefer the
-  // evaluated `RequestStatus` off collection detail where you have it — these are
-  // the raw source, and the only thing available from a list.
-  submission_start?: string;    // ISO or absent (always absent on a jam or album)
+  // Submission fields, returned by the list read. A mixtape and a jam both use
+  // the full window (start → deadline) — a jam closes on whichever comes first,
+  // filling up or running out of time, and can be scheduled to open later; an
+  // album has neither clock, but does have a capacity. Prefer the evaluated
+  // `RequestStatus` off collection detail where you have it — these are the raw
+  // source, and the only thing available from a list.
+  submission_start?: string;    // ISO or absent (always absent on an album)
   submission_deadline?: string; // ISO or absent (absent on an album, and on a pre-clock jam)
   // Tracks in so far, against the capacity. Set on all three types now — on an
   // album the pair is what says whether it can be released yet, which is the one
@@ -80,7 +80,7 @@ export interface Collection {
   max_tracks?: number;
   // The jam's winner, once it has one — the field whose presence *is* the
   // `resolved` phase. Jam-only, and the one piece of `JamStatus` the list read
-  // carries, which is how a list can tell a live jam from an archived one
+  // carries, which is how a list can tell a running jam from a finished one
   // without a detail fetch per jam (see `useLiveJam`).
   selected_song_id?: string;
 }
@@ -88,11 +88,11 @@ export interface Collection {
 // Whether a collection is currently accepting song submissions, evaluated
 // server-side on collection detail read. `open` gates the submission form; when
 // closed, `reason` says why. The window runs from `submission_start` to
-// `submission_deadline`; a jam has only the deadline, so its `submission_start`
-// is null but its `submission_deadline` is real — a jam closes on capacity OR
-// time, whichever comes first. An album has neither date and closes on capacity
-// alone. `track_count` is the count of submissions received (the capacity gauge
-// is track_count / max_tracks).
+// `submission_deadline`, and both crowdsourced types now have both ends of it —
+// a jam closes on capacity OR time, whichever comes first, and can sit before
+// its start with `reason: 'not_started'`. An album has neither date and closes
+// on capacity alone. `track_count` is the count of submissions received (the
+// capacity gauge is track_count / max_tracks).
 export interface RequestStatus {
   // Whether the collection would accept a submission right now — a fact about
   // the collection, not about who's looking. An album's closes on capacity

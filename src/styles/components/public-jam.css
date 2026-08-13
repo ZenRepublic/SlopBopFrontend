@@ -1,57 +1,26 @@
 /* ============================================================
-   Live Jam — the "this artist is running a session right
-   now" pair on the artist profile: the LIVE badge above the
-   name, and the call-to-action card below the bio.
+   Public Jam — the About page's showcase card, and the only
+   jam card there is. Cover across the full column, the facts
+   stacked beneath it.
 
-   Broadcast red, borrowed from the error token — live is always
-   red, and the card carries the same red edge so the two read as
-   one thing: a dark red wash inside a red edge, everything on it
-   in white.
+   Broadcast red, borrowed from the error token: live is always
+   red, so the card is a dark red wash inside a red edge with
+   everything on it in white.
 
    Two things break the red on purpose: the lime gauge, the one
    spot of accent, which keeps the fill from going static; and
    the pulsing edge, which is what actually pulls the eye down
    the page.
+
+   (There was a second, row-shaped card on the artist profile
+   sharing these parts, plus a LIVE badge above the artist's
+   name. Both were cosmetic and are cut — git has them if the
+   profile ever wants to announce a jam again.)
    ============================================================ */
 
-.live-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-xs);
-  align-self: flex-start;
-  border: 1px solid var(--color-error);
-  border-radius: var(--radius-sm);
-  background: color-mix(in srgb, var(--color-error) 12%, transparent);
-  color: var(--color-error);
-  font-family: var(--font-accent);
-  font-size: var(--font-size-xs);
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  padding: 2px var(--space-sm);
-}
-
-.live-badge__dot {
-  width: 7px;
-  height: 7px;
-  border-radius: var(--radius-full);
-  background: currentColor;
-  animation: live-blink 1.4s ease-in-out infinite;
-}
-
-@keyframes live-blink {
-  0%, 100% { opacity: 1; box-shadow: 0 0 6px currentColor; }
-  50%      { opacity: 0.25; box-shadow: 0 0 0 currentColor; }
-}
-
-/* The CTA card. Same red edge as the badge — that shared colour is what ties it
-   back to the LIVE mark up by the artist's name. */
-.live-jam {
-  display: flex;
-  align-items: stretch;
-  gap: var(--space-md);
+.public-jam {
+  display: block;
   width: 100%;
-  text-align: left;
   overflow: hidden;
   border: 1px solid var(--color-error);
   border-radius: var(--radius-lg);
@@ -59,15 +28,13 @@
      fill has to stay well under the border for that edge to keep popping. */
   background: color-mix(in srgb, var(--color-error) 28%, var(--bg-primary));
   color: var(--white);
-  padding: var(--space-sm);
   cursor: pointer;
   transition: transform var(--transition-base);
-  animation: live-jam-pulse 2.2s ease-in-out infinite;
+  animation: public-jam-pulse 2.2s ease-in-out infinite;
 }
 
-/* Breathing red glow on the edge. Slower than the badge dot on purpose — they
-   shouldn't tick together, and the card is ambient where the dot is a signal. */
-@keyframes live-jam-pulse {
+/* Breathing red glow on the edge — ambient, not a signal. */
+@keyframes public-jam-pulse {
   0%, 100% {
     box-shadow: 0 0 6px 0 color-mix(in srgb, var(--color-error) 30%, transparent);
   }
@@ -76,90 +43,27 @@
   }
 }
 
-.live-jam:active {
-  transform: scale(0.98);
-}
-
-.live-jam__cover {
-  flex-shrink: 0;
-  width: 88px;
-  border-radius: var(--radius-md);
-  overflow: hidden;
-}
-
-.live-jam__body {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: var(--space-xs);
-  min-width: 0;   /* lets the title truncate instead of stretching the row */
-  padding-right: var(--space-xs);
-}
-
-/* Capacity gauge — how full the tape is, at a glance. */
-.live-jam__gauge {
-  height: 4px;
-  border-radius: var(--radius-sm);
-  background: var(--track-bg);
-  overflow: hidden;
-}
-
-/* Lime — the card's one non-red element. Against all that red it's the thing
-   your eye catches, and it makes the fill read as progress rather than trim. */
-.live-jam__gauge-fill {
-  height: 100%;
-  background: var(--accent);
-  border-radius: inherit;
-  transition: width var(--transition-slow);
-}
-
-/* The capacity read-out — white, stepped back from the title. */
-.live-jam__count {
-  font-size: var(--font-size-xs);
-  color: var(--white);
-  opacity: 0.7;
-}
-
-/* The artist's quoted line. Italic and dulled so it reads as someone speaking
-   rather than as label copy — the card's loud part is the red frame, not this. */
-.live-jam__cta {
-  font-size: var(--font-size-sm);
-  font-style: italic;
-  line-height: 1.35;
-  color: var(--white);
-  opacity: 0.8;
-}
-
-/* ------------------------------------------------------------
-   Public Jam — the About page's showcase variant. Same red frame
-   and the same pulse, but stacked instead of side-by-side: cover
-   across the full column, everything else beneath it. It reuses
-   the gauge, count and cta parts above verbatim, which is the
-   point — the card a visitor meets on the landing page and the
-   one on the artist's profile have to read as the same object.
-   ------------------------------------------------------------ */
-.public-jam {
-  display: block;
-  width: 100%;
-  overflow: hidden;
-  border: 1px solid var(--color-error);
-  border-radius: var(--radius-lg);
-  background: color-mix(in srgb, var(--color-error) 28%, var(--bg-primary));
-  color: var(--white);
-  cursor: pointer;
-  transition: transform var(--transition-base);
-  animation: live-jam-pulse 2.2s ease-in-out infinite;
-}
-
 .public-jam:active {
   transform: scale(0.98);
 }
 
+/* A jam with nowhere to send anyone — it hasn't opened, or it ended empty. The
+   card renders as a div rather than a link, so this only has to drop the two
+   things that promise a tap. It keeps the frame and the pulse: it's still
+   announcing something, it just isn't a door. */
+.public-jam--inert {
+  cursor: default;
+}
+
+.public-jam--inert:active {
+  transform: none;
+}
+
 /* The affordance, as a tab off the right edge. It sits low rather than in the
-   top-right corner because the cover is the card's only text identity now —
-   the jam's title and the artist's name are painted into the artwork, and a
-   corner tab lands straight on them. Below the middle it clears the art's
-   subject and reads as a button hanging off the frame. */
+   top-right corner because the cover is the card's only text identity — the
+   jam's title and the artist's name are painted into the artwork, and a corner
+   tab lands straight on them. Below the middle it clears the art's subject and
+   reads as a button hanging off the frame. */
 .public-jam__tab {
   position: absolute;
   right: 0;
@@ -182,6 +86,23 @@
   padding: var(--space-md) var(--space-lg);
 }
 
+/* Capacity gauge — how full the tape is, at a glance. */
+.public-jam__gauge {
+  height: 4px;
+  border-radius: var(--radius-sm);
+  background: var(--track-bg);
+  overflow: hidden;
+}
+
+/* Lime — the card's one non-red element. Against all that red it's the thing
+   your eye catches, and it makes the fill read as progress rather than trim. */
+.public-jam__gauge-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: inherit;
+  transition: width var(--transition-slow);
+}
+
 /* Capacity left, clock right — the two ways a jam can close, on one line. */
 .public-jam__meta {
   display: flex;
@@ -190,14 +111,32 @@
   gap: var(--space-sm);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .live-badge__dot {
-    animation: none;
-    box-shadow: 0 0 6px currentColor;
-  }
+/* The read-outs — white, stepped back from the card's own voice. */
+.public-jam__count {
+  font-size: var(--font-size-xs);
+  color: var(--white);
+  opacity: 0.7;
+}
 
+/* The line under the facts. Italic and dulled so the artist's quoted pitch reads
+   as someone speaking rather than as label copy — the card's loud part is the
+   red frame, not this. */
+.public-jam__cta {
+  font-size: var(--font-size-sm);
+  font-style: italic;
+  line-height: 1.35;
+  color: var(--white);
+  opacity: 0.8;
+}
+
+/* The label speaking instead of the artist — a two-line notice about a jam
+   that's over, which wants the column's middle rather than its left edge. */
+.public-jam__cta.centered {
+  text-align: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
   /* Keep a static glow so the card still reads as lit, just not moving. */
-  .live-jam,
   .public-jam {
     animation: none;
     box-shadow: 0 0 12px 1px color-mix(in srgb, var(--color-error) 45%, transparent);

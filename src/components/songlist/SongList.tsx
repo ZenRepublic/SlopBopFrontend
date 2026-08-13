@@ -4,7 +4,7 @@ import { useMusicPlayer, type Track } from '../../context/MusicPlayerContext';
 import SingleCard from './SingleCard';
 import ProcessingCard from './ProcessingCard';
 
-type SongSort = 'release' | 'bops-desc' | 'bops-asc';
+export type SongSort = 'release' | 'bops-desc' | 'bops-asc';
 
 // The sort toggle's segments, in display order. Labelled here rather than
 // derived from the key, because the arrow is the label — and it points at where
@@ -32,6 +32,13 @@ interface Props {
    * stable (it's a dependency of the countdown card's poll).
    */
   onRefetch?: () => void;
+  /**
+   * Which order the list opens in. Defaults to release order — the catalogue
+   * reading. A live jam opens on `bops-desc` instead, because there the order
+   * *is* the standings, not a preference about them. Only the initial value; the
+   * toggle owns it from then on.
+   */
+  defaultSort?: SongSort;
 }
 
 /**
@@ -56,9 +63,9 @@ interface Props {
  * that shouldn't announce an empty section at all (a heading over zero songs)
  * still decides that for itself, by not rendering us.
  */
-export default function SongList({ songs, toTrack, onRefetch }: Props) {
+export default function SongList({ songs, toTrack, onRefetch, defaultSort = 'release' }: Props) {
   const { playQueue, track, playing, togglePlay } = useMusicPlayer();
-  const [sort, setSort] = useState<SongSort>('release');
+  const [sort, setSort] = useState<SongSort>(defaultSort);
 
   const released = songs.filter(s => isReleased(s));
   // The soonest still-unreleased song — the only one shown, as a countdown card.
