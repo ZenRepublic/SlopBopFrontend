@@ -17,6 +17,8 @@ export interface Track {
   audioUrl: string;
   duration?: number;
   lyrics?: string;
+  /** The artist's note on the song — null before release, like the lyrics. */
+  note?: string | null;
   author?: string;
   /** Seeds the player's bop count — see `useSongBop`. Absent reads as 0. */
   bops?: number;

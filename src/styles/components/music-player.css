@@ -285,6 +285,88 @@
   }
 }
 
+/* ============================================================
+   Artist's note — the accordion under the lyrics.
+
+   The same move as the FAQ but its own type: it sits on the player's black
+   sheet rather than on a sage card, and the note is prose of unknown length —
+   so the open state is a grid row (0fr → 1fr), which animates to whatever
+   height the note turns out to be instead of a max-height ceiling a long one
+   would be clipped by.
+   ============================================================ */
+.artist-note {
+  margin-top: var(--space-2xl);
+  border-top: 1px solid var(--divider);
+}
+
+.artist-note-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  /* Override the base button inset — this is a full-width row, not a pill. */
+  padding: var(--space-lg) 0;
+  text-align: left;
+  cursor: pointer;
+
+  /* White, not the lyrics' sage: this is the panel's label, and it shouldn't
+     read as another line of the song. The chevron carries the open state. */
+  font-family: var(--font-accent);
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-base);
+  letter-spacing: 0.02em;
+  color: var(--white);
+}
+
+.artist-note-chevron {
+  flex-shrink: 0;
+  line-height: 1;
+  transition: transform var(--transition-base);
+}
+
+.artist-note-toggle[aria-expanded='true'] .artist-note-chevron {
+  transform: rotate(180deg);
+}
+
+.artist-note-body {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows var(--transition-base);
+}
+
+.artist-note-body.open {
+  grid-template-rows: 1fr;
+}
+
+/* The clip layer, so the collapsed row shows nothing at all. `min-height: 0`
+   stops it claiming its content's height as a grid item, and the spacing lives
+   on the text inside it — padding here would survive the collapse as a gap. */
+.artist-note-clip {
+  overflow: hidden;
+  min-height: 0;
+}
+
+.artist-note-clip > p {
+  padding-bottom: var(--space-lg);
+  font-size: var(--font-size-sm);
+  line-height: 1.6;
+  /* The same muted grey as the lyrics' structural tags — the note is the aside
+     to the song, and reads a step back from the words themselves. */
+  color: var(--text-muted);
+  /* The note is stored verbatim: keep its line breaks without splitting it into
+     markup, and break a long unspaced run rather than widening the sheet. */
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .artist-note-body,
+  .artist-note-chevron {
+    transition: none;
+  }
+}
+
 /* Full-screen sheet slide. `is-open` plays on mount (slide up from the bottom),
    `is-closing` plays when the arrow collapses it (slide back down); the TSX
    unmounts on the closing animation's end. `forwards` holds the off-screen

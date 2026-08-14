@@ -64,6 +64,11 @@ export default function MusicPlayer() {
 
   const [downloading, setDownloading] = useState(false);
 
+  // Held here rather than inside ArtistNote so it survives the queue advancing:
+  // opening the panel is a statement about wanting to read the notes, not about
+  // one song, so the next song's note is already open when it arrives.
+  const [noteOpen, setNoteOpen] = useState(false);
+
   // Keep the sheet mounted for the slide-down: `expanded` flips to false the
   // instant the arrow is tapped, but we hold the element in the DOM (rendered)
   // until its exit animation finishes, then unmount on animationEnd below.
@@ -97,6 +102,9 @@ export default function MusicPlayer() {
   }, [track, downloading]);
 
   if (!track || (!expanded && !rendered)) return null;
+
+  // Whitespace-only is no note — it would otherwise draw an empty panel.
+  const note = track.note?.trim();
 
   // Infinity would make the fill 0% and the scrubber span a length that isn't
   // the song's, so treat an unknown duration as "no seek bar yet".
@@ -295,23 +303,65 @@ export default function MusicPlayer() {
       <BopMeter />
 
       {/* Lyrics — centered column (aligned with the content above), but the
-          text itself stays left-aligned. */}
-      {track.lyrics && (
+          text itself stays left-aligned. The artist's note folds up underneath,
+          in the same column. Both arrive with the release, so an unreleased
+          song has neither and this whole section is absent. */}
+      {(track.lyrics || note) && (
         <div className="mx-auto w-full max-w-player px-lg pb-3xl">
-          <div className="flex items-center justify-between gap-md mb-xl">
-            <h3 className="font-display text-xl">Lyrics</h3>
-            {track.author && (
-              <div className="text-right text-sm subtle min-w-0">
-                <div>Written by</div>
-                <div className="font-bold text-soft truncate">{track.author}</div>
+          {track.lyrics && (
+            <>
+              <div className="flex items-center justify-between gap-md mb-xl">
+                <h3 className="font-display text-xl">Lyrics</h3>
+                {track.author && (
+                  <div className="text-right text-sm subtle min-w-0">
+                    <div>Written by</div>
+                    <div className="font-bold text-soft truncate">{track.author}</div>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-          <p className="text-sm text-soft whitespace-pre-line leading-relaxed">
-            {renderLyrics(normalizeLyrics(track.lyrics))}
-          </p>
+              <p className="text-sm text-soft whitespace-pre-line leading-relaxed">
+                {renderLyrics(normalizeLyrics(track.lyrics))}
+              </p>
+            </>
+          )}
+          {note && (
+            <ArtistNote note={note} open={noteOpen} onToggle={() => setNoteOpen(o => !o)} />
+          )}
         </div>
       )}
+      </div>
+    </div>
+  );
+}
+
+// The artist's word on how the song came about, folded away under the lyrics —
+// it's the footnote to the words, not a second set of them, so it opens on a
+// press rather than on arrival. Controlled, because the player owns whether
+// it's open (see `noteOpen`). Rendered as plain text on purpose: the note is
+// model-generated prose the backend stores verbatim, so React's escaping is the
+// only thing standing between a stray `<script>` and the page.
+function ArtistNote({
+  note,
+  open,
+  onToggle,
+}: {
+  note: string;
+  open: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <div className="artist-note">
+      <button type="button" onClick={onToggle} aria-expanded={open} className="artist-note-toggle">
+        <span>Artist's Notes</span>
+        <span className="artist-note-chevron" aria-hidden="true">▾</span>
+      </button>
+      {/* Two elements, not one: the outer div is the grid row that animates,
+          the inner one does the clipping. Padding on the clipped element itself
+          would still occupy its 16px while collapsed. */}
+      <div className={`artist-note-body ${open ? 'open' : ''}`}>
+        <div className="artist-note-clip">
+          <p>{note}</p>
+        </div>
       </div>
     </div>
   );

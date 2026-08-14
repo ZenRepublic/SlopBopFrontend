@@ -8,12 +8,17 @@ export interface Song {
   duration?: number;
   cover_url?: string;
   // Media is withheld until release: an upcoming song (`released: false`) comes
-  // through with `audio_url`, `animation_url`, and `lyrics` all null — only the
-  // title and cover art are present, for the countdown card. Guard playback/
-  // download against the missing audio.
+  // through with `audio_url`, `animation_url`, `lyrics` and `note` all null —
+  // only the title and cover art are present, for the countdown card. Guard
+  // playback/download against the missing audio.
   audio_url?: string;
   animation_url?: string;
   lyrics?: string;
+  // The artist's own word on how the song came about, or null for no note. It's
+  // model-generated prose the backend stores verbatim — uncapped and
+  // unsanitized, so render it as plain text and never as markup. Gate on
+  // `note?.trim()`: a whitespace-only note is no note.
+  note?: string | null;
   /**
    * The credit, as exactly one of these two — never read `author` directly, use
    * `songCredit` (credit.ts), which knows which one is in play.

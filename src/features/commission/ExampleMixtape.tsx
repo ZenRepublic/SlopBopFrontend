@@ -44,6 +44,7 @@ export function ExampleMixtape() {
     audioUrl: song.audio_url!,
     duration: song.duration,
     lyrics: song.lyrics,
+    note: song.note,
     author: songCredit(song, artist),
     bops: song.bops,
     artistId: mixtape.artist_id,
