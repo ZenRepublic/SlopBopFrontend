@@ -83,6 +83,16 @@ export interface Collection {
   // carries, which is how a list can tell a running jam from a finished one
   // without a detail fetch per jam (see `useLiveJam`).
   selected_song_id?: string;
+  // Which jam this is: 1 for the first the label ever ran, counting up. Jam-only,
+  // stored on the doc and returned by every jam read — the detail fetch, the list,
+  // and `fetchCurrentJam`.
+  //
+  // **This is the only place the number comes from.** Titles are written by hand
+  // and are free to say anything, so reading "Jam #3" back out of one is a parse
+  // that breaks the first time someone names a jam something else. Optional
+  // because the jams that predate the field don't have one — fall back to the
+  // title alone rather than printing `Jam #undefined`.
+  edition?: number;
 }
 
 // Whether a collection is currently accepting song submissions, evaluated
