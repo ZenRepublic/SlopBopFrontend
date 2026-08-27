@@ -8,6 +8,7 @@ export type { SessionSnapshot } from './slopbop/session';
 export * from './slopbop/client';
 export * from './slopbop/artists';
 export * from './slopbop/collections';
+export * from './slopbop/opencall';
 export * from './slopbop/jams';
 export * from './slopbop/albums';
 export * from './slopbop/songs';

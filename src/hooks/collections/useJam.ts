@@ -2,21 +2,15 @@ import { useResource } from '../useResource';
 import { fetchCollection, Song } from '../../services/slopbop';
 import { useToast } from '../../context/ToastContext';
 
-// Loads a single jam — a jam-type collection — for the jam page. The same
-// generic detail read as a mixtape (`fetchCollection`); what a jam adds is
-// `jamStatus`.
+// A single jam, for the jam page. Same detail read and same open call as a
+// mixtape; what a jam adds is a winner at the end of it. Both statuses come back
+// because they answer different questions: `requestStatus` gates the submit form
+// (and nothing else should), `openCallStatus` picks which act of the page to
+// render.
 //
-// The two statuses are both returned because they answer different questions and
-// the page needs both:
-//
-//   requestStatus  can someone submit right now (capacity included) — the ONLY
-//                  thing that should gate the submit form. A jam that filled on
-//                  day two is closed while its phase is still `open`.
-//   jamStatus      where the event has got to — which act of the page to render
-//                  (scheduled / submitting / tallying / won / dead).
-//
-// A resolved jam comes back with `songs: []`: the winner was lifted out of the
-// collection and the rest deleted. Fetch it with `useSong(jamStatus.selected_song_id)`.
+// Two phases return `songs: []` and neither is a failure — the submission window,
+// and a resolved jam whose winner was lifted out. Fetch that winner with
+// `useSong(openCallStatus.selected_song_id)`.
 export function useJam(id: string) {
   const { showToast } = useToast();
   const { data, loading, refetch } = useResource(
@@ -24,21 +18,23 @@ export function useJam(id: string) {
     id ? `collection-${id}` : '',
     {
       onError: () => showToast('Failed to load jam'),
-      // Bops decide the winner, so an open jam's ranking is a live race — poll it
-      // so the order moves on its own while the room is watching. Every other
-      // phase is static until a countdown elapses, and refetches on that.
-      pollMs: d => (d?.jamStatus?.phase === 'open' ? 30_000 : undefined),
+      // Two live phases, two reasons: the count climbs while the window is open
+      // (no songs to watch yet), then the tracks land and the bops start moving.
+      // Every other phase is static until a countdown elapses.
+      pollMs: d =>
+        d?.openCallStatus?.phase === 'open' || d?.openCallStatus?.phase === 'awaiting_resolution'
+          ? 30_000
+          : undefined,
     },
   );
   return {
     jam: data?.collection ?? null,
     songs: (data?.songs ?? []) as Song[],
     requestStatus: data?.requestStatus ?? null,
-    jamStatus: data?.jamStatus ?? null,
+    openCallStatus: data?.openCallStatus ?? null,
     loading,
-    // Phases turn on wall-clock deadlines the server evaluates, so the way a page
-    // advances is to refetch when a countdown elapses — same as the mixtape's
-    // window.
+    // Phases turn on deadlines the server evaluates, so a page advances by
+    // refetching when a countdown elapses.
     refetch,
   };
 }

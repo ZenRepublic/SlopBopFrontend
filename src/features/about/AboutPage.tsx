@@ -3,7 +3,7 @@ import { Footer } from '../../components/Footer';
 import { SocialLinks } from '../../primitives/SocialLinks';
 import { Flourish } from '../../primitives/Flourish';
 import { useCurrentJam } from '../../hooks/collections';
-import { PublicJamCard } from './PublicJamCard';
+import { PublicJamCard, PublicJamCardSkeleton } from './PublicJamCard';
 import { Testimonials } from './Testimonials';
 import { PROJECT_SOCIALS } from '../../config/socials';
 
@@ -12,7 +12,7 @@ export default function AboutPage() {
   // The label's jam, not an artist's. One global read answers it now, and it
   // holds the last jam between events — so this is null only before the very
   // first one, which is the one case the section has nothing to say.
-  const { jam, jamStatus, refetch } = useCurrentJam();
+  const { jam, openCallStatus, requestStatus, loading, refetch } = useCurrentJam();
 
   return (
     <div className="flex flex-col gap-xl py-lg">
@@ -47,13 +47,16 @@ export default function AboutPage() {
           card never had one either — it out-competes the card for the tap, and
           Roster is a permanent nav tab anyway.
 
-          The whole section hangs on there being a jam: with none, the sentence
-          is a claim about a thing that isn't happening, and a heading over
-          nothing reads as broken. The line itself is static and stays an
-          invitation — no cadence promised, and no phase reported. Which phase
-          this jam is in, and whether you can still get a song in, is the jam
-          page's answer once you tap the card. */}
-      {jam && (
+          The copy is about the *label*, not one event, so it's true before the
+          read lands and renders straight away — the card fills in underneath
+          rather than the section popping in whole. It stays a static invitation:
+          no cadence promised, no phase reported. Which phase this jam is in is
+          the jam page's answer once you tap the card.
+
+          It still hangs on there having *ever* been a jam — a heading over
+          nothing reads as broken — but that's rare: the read holds the last jam
+          between events, so `null` means the label has never run one. */}
+      {(loading || jam) && (
         <section className="flex flex-col gap-md px-md">
           <h2 className="font-display text-2xl">Public Jams</h2>
           {/* One sentence per paragraph, on the section's own gap — the same
@@ -68,7 +71,16 @@ export default function AboutPage() {
             The most popular submission of the jam will become their new single, while the
             others perish forever....
           </p>
-          <PublicJamCard jam={jam} jamStatus={jamStatus} onExpire={refetch} />
+          {jam ? (
+            <PublicJamCard
+              jam={jam}
+              openCallStatus={openCallStatus}
+              requestStatus={requestStatus}
+              onExpire={refetch}
+            />
+          ) : (
+            <PublicJamCardSkeleton />
+          )}
         </section>
       )}
 

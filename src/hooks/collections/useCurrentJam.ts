@@ -9,13 +9,17 @@ import { fetchCurrentJam } from '../../services/slopbop';
 // events the last one keeps showing rather than the surface going blank. `jam`
 // is null in exactly one case: the label has never run one. That's a fact, not a
 // failure — hide the section, don't show an error.
+//
+// `requestStatus` is here for the card's gauge: with no songs until the window
+// shuts, the submission count is the only sign the jam is alive.
 export function useCurrentJam() {
   const { data, loading, refetch } = useResource(fetchCurrentJam, 'jam-current', {
     onError: () => {},
   });
   return {
     jam: data?.collection ?? null,
-    jamStatus: data?.jamStatus ?? null,
+    openCallStatus: data?.openCallStatus ?? null,
+    requestStatus: data?.requestStatus ?? null,
     loading,
     refetch,
   };

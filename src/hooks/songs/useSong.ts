@@ -5,7 +5,7 @@ import { fetchSong } from '../../services/slopbop';
 // left the collection on its way to becoming a single.
 //
 // An empty id is a valid idle state (a jam that isn't resolved has no winner to
-// fetch), so callers can pass `jamStatus?.selected_song_id ?? ''` unconditionally
+// fetch), so callers can pass `openCallStatus?.selected_song_id ?? ''` unconditionally
 // rather than branching around the hook.
 //
 // Silent on failure. It's called next to a jam that already reported itself

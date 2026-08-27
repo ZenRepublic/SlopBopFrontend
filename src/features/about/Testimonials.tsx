@@ -12,7 +12,7 @@ interface Testimonial {
  */
 const TESTIMONIALS: Testimonial[] = [
   { quote: 'Wow this shit is so fun.', author: 'Thomukas1' },
-  { quote: 'this is ass', author: 'Hater' },
+  { quote: 'Your AI gems entertain me', author: 'Gintaras' },
 ];
 
 const ROTATE_MS = 6000; // how long each quote is shown — the single timing source

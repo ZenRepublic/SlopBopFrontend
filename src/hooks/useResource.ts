@@ -27,7 +27,10 @@ export function useResource<T>(
   const [data, setData] = useState<T | null>(
     cache && resolvedCache.has(key) ? (resolvedCache.get(key) as T) : null,
   );
-  const [loading, setLoading] = useState(cache ? !resolvedCache.has(key) : false);
+  // True from the first render, before the effect below runs: a keyed resource is
+  // *going* to fetch, and `false` with null data is indistinguishable from a
+  // finished load that found nothing. No key, no fetch, nothing pending.
+  const [loading, setLoading] = useState(cache ? !resolvedCache.has(key) : !!key);
   const [error, setError] = useState<unknown>(null);
 
   const fetchKeyRef = useRef('');

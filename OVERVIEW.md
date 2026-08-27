@@ -88,7 +88,7 @@ Two things follow that look optional and aren't. `Img` sends `crossorigin="anony
 
 ---
 
-## The three collection types
+## The three collection types, and the one lifecycle two of them share
 
 A **collection** is the generic container for an artist's songs, and `type`
 discriminates three of them. They share one shape and one detail read
@@ -98,22 +98,55 @@ difference drives every surface decision below.
 | type | songs come from | window | lifecycle | surface |
 |---|---|---|---|---|
 | `album` | the artist — authored | none | permanent | `/albums/:id`, listed in Discography |
-| `mixtape` | a commissioning group | start → deadline, batch release | permanent | `/mixtapes/:id`, reached by its own link |
+| `mixtape` | a commissioning group | start → deadline | permanent | `/mixtapes/:id`, reached by its own link |
 | `jam` | anyone, one per device | start → deadline, capacity too | **the most-bopped song is promoted to a single; the rest are deleted** | `/jams/:id`, reached from the card on About |
 
-Two consequences worth holding onto:
+Three consequences worth holding onto:
 
 - **Only `album` appears in the Discography.** A jam is a live session, not a
   release; a commissioned mixtape is a group's artifact from their own day, and
   listing it would file someone's birthday party under the label's catalogue.
 - **Only the crowdsourced two carry `request_status`.** An album returns none, so
   the submission UI has nothing to gate on and simply never renders.
+- **The crowdsourced two run one lifecycle — the open call**, and differ only in
+  what happens at the end of it. See below.
+
+## The open call
+
+A mixtape and a jam are the same machine pointed at different ends: a window
+opens, anyone may submit against it, the window shuts, and *then* the songs are
+produced and released one at a time. `OpenCallStatus` is that lifecycle, returned
+as `open_call_status` by every read that carries one, and both types have one.
+
+**Nothing is produced while the window is open.** A collection's detail read
+answers `songs: []` for the whole of `scheduled` and `open` — which is why
+neither page renders a tracklist in those phases. An empty list under a live call
+reads as a page that failed to load, where the call itself — the pitch, the
+countdown, the writer, the count — reads as an invitation. The tracks arrive at
+the deadline as unreleased songs with staggered `release_date`s, and `SongList`'s
+countdown card reveals them one by one. (That path predates all this; it just
+never fired on a jam before.)
+
+`src/components/opencall/` is the one implementation: `OpenCall` owns the state
+machine and the layout, and knows nothing about jams or mixtapes. Each page
+passes its own wording in as an `OpenCallCopy` — the voice is the page's, and the
+two sound nothing alike. `Notice` is the small centred card the non-form states
+are said in.
+
+`OpenCallStatus.phase` is the discriminator for everything:
+`scheduled → open → awaiting_resolution → resolved`, plus `closed` for a call
+nobody entered. It is **not** the same question as `request_status.open`, and the
+two are deliberately not merged: `request_status` is "can I submit right now"
+(capacity included) and is the only thing that gates the form, while `phase` is
+where the event itself has got to. A jam that filled on day two is closed to
+submissions while still in its `open` phase.
 
 **A jam is the label's event, not an artist's.** Nobody in the app starts one or
 picks its winner — both writes moved behind the backend's curation key, and the
 winner is settled by bops alone (ties broken by earliest submission). That's what
-promotes voting from decoration to the mechanic: while a jam runs, the tracklist
-*is* the standings, which is why `JamPage` opens it most-bopped-first and polls.
+promotes voting from decoration to the mechanic: once the tracks land, the
+tracklist *is* the standings, which is why `JamPage` opens it most-bopped-first
+and polls.
 
 So a jam is global, and `GET /collections/jams/current` (`useCurrentJam`) is the
 read that headlines About — no artist id, and it answers with the most recently
@@ -128,12 +161,12 @@ shared copy module *and* a client-side phase derivation duplicating the backend'
 clock — a lot of machinery for decoration. They're cut, and both those pieces went
 with them. Git has all three if the profile should announce a jam again.
 
-`JamStatus.phase` is the discriminator for everything:
-`scheduled → open → awaiting_resolution → resolved`, plus `closed` for a jam
-nobody entered. **The one that bites: a resolved jam's detail read returns
+**The jam-only one that bites: a resolved jam's detail read returns
 `songs: []`** — the winner's `collection_id` was cleared and the also-rans
-deleted — so the winner is fetched separately by `jam_status.selected_song_id`.
-It inherits the jam's cover, which is what ties it back to the event.
+deleted — so the winner is fetched separately by
+`open_call_status.selected_song_id` (the one field a mixtape's open call doesn't
+carry). It inherits the jam's cover, which is what ties it back to the event.
+That makes *two* phases a jam answers empty in, and neither is a failed read.
 
 ---
 

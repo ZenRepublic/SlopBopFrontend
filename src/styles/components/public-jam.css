@@ -135,10 +135,48 @@
   text-align: center;
 }
 
+/* ---- Loading ----
+   The card before its contents, keeping the frame and the pulse so the real one
+   fills the shape in rather than replacing a grey box. Both placeholders are
+   white at low opacity, i.e. the card's own red showing through — a neutral
+   skeleton grey would read as a different component. */
+.public-jam__skeleton-cover {
+  width: 100%;
+  aspect-ratio: 1;
+  background: linear-gradient(
+    100deg,
+    color-mix(in srgb, var(--white) 4%, transparent) 30%,
+    color-mix(in srgb, var(--white) 13%, transparent) 50%,
+    color-mix(in srgb, var(--white) 4%, transparent) 70%
+  );
+  background-size: 200% 100%;
+  animation: public-jam-shimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes public-jam-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Stands in for a line of text — sized by the caller, since the facts it's
+   holding a place for aren't all the same length. */
+.public-jam__skeleton-bar {
+  display: block;
+  height: 0.7em;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--white) 12%, transparent);
+}
+
 @media (prefers-reduced-motion: reduce) {
   /* Keep a static glow so the card still reads as lit, just not moving. */
   .public-jam {
     animation: none;
     box-shadow: 0 0 12px 1px color-mix(in srgb, var(--color-error) 45%, transparent);
+  }
+
+  /* Same for the cover: a flat wash instead of a travelling one. */
+  .public-jam__skeleton-cover {
+    animation: none;
+    background: color-mix(in srgb, var(--white) 8%, transparent);
   }
 }

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import type { Collection, JamStatus } from '../../services/slopbop';
+import type { Collection, OpenCallStatus, RequestStatus } from '../../services/slopbop';
 import { Countdown } from '../../primitives/Countdown';
 import Img from '../../primitives/Img';
 
@@ -7,7 +7,10 @@ interface Props {
   jam: Collection;
   /** Where the jam has got to. Absent only if the server didn't send one — the
    *  card then reads as an open one, which is the state it looks like anyway. */
-  jamStatus: JamStatus | null;
+  openCallStatus: OpenCallStatus | null;
+  /** The evaluated window, for the gauge — the same pair the submit endpoint
+   *  enforces against, so it can't drift from the collection doc's copy. */
+  requestStatus: RequestStatus | null;
   /** Re-read the jam when a countdown passes, so a closed one stops inviting
    *  submissions without a page reload. */
   onExpire: () => void;
@@ -32,20 +35,23 @@ interface Props {
  * shared with a second card on the artist profile; that card is gone, so the
  * wording lives here, next to the markup it fills.
  */
-export function PublicJamCard({ jam, jamStatus, onExpire }: Props) {
-  const count = jam.submission_count ?? jam.song_count ?? 0;
-  const max = jam.max_tracks ?? 0;
+export function PublicJamCard({ jam, openCallStatus, requestStatus, onExpire }: Props) {
+  // Submissions, never songs: a jam is empty of tracks for its whole window, so
+  // `song_count` is 0 for most of the life this card is showing.
+  const count = requestStatus?.track_count ?? jam.submission_count ?? 0;
+  const max = requestStatus?.max_tracks ?? jam.max_tracks ?? 0;
   const full = max > 0 && count >= max;
-  const phase = jamStatus?.phase ?? 'open';
+  const phase = openCallStatus?.phase ?? 'open';
 
   // The tab off the cover's edge, the line under the facts, and whether the card
   // is a way in at all. Only a jam that can still take a song runs the artist's
   // own quoted pitch — it asks for one, which is the wrong thing to say once
   // none can be sent.
   const pitch = `“${jam.cta || 'Write my next Single'}”`;
-  // A full tape is the same state as the tally, one day earlier: nothing left to
-  // write, everything left to vote on. So the two say the same thing.
-  const voting = phase === 'awaiting_resolution' || (phase === 'open' && full);
+  // Full and voting used to be one state. They aren't: nothing is produced until
+  // the window shuts, so a full jam has every slot taken and not one song to bop.
+  const filled = phase === 'open' && full;
+  const voting = phase === 'awaiting_resolution';
   // Over, either way: one song won, or nobody entered and none did.
   const over = phase === 'resolved' || phase === 'closed';
 
@@ -59,9 +65,12 @@ export function PublicJamCard({ jam, jamStatus, onExpire }: Props) {
   if (phase === 'scheduled') {
     tab = 'Starting soon';
     interactive = false;
+  } else if (filled) {
+    tab = 'See the jam →';
+    line = 'Jam is full! The songs drop when submissions close';
   } else if (voting) {
     tab = 'Vote now →';
-    line = 'Jam is full! Vote for your favorite song. Only the most bopped song will survive';
+    line = 'The songs are dropping! Vote for your favorite. Only the most bopped song will survive';
   } else if (over) {
     tab = phase === 'resolved' ? 'See the winner →' : 'Jam over';
     interactive = phase === 'resolved';
@@ -76,12 +85,12 @@ export function PublicJamCard({ jam, jamStatus, onExpire }: Props) {
     tab = 'Try now! →';
   }
 
-  // Both clocks are the same control pointed at different moments. Neither is
-  // rendered once its moment has passed: `Countdown` on a past target sits on
-  // "Updating…" forever, which is a broken-looking card on every finished jam.
+  // One control, three moments, never one that's passed: `Countdown` on a past
+  // target sits on "Updating…" forever. The deadline shows even when full — it's
+  // the moment the songs arrive, which is the most useful thing on the card.
   const clock =
-    phase === 'scheduled' ? jamStatus?.submission_start ?? jam.submission_start ?? null
-      : phase === 'open' && !full ? jam.submission_deadline ?? null
+    phase === 'scheduled' ? openCallStatus?.submission_start ?? jam.submission_start ?? null
+      : phase === 'open' ? openCallStatus?.submission_deadline ?? jam.submission_deadline ?? null
       : null;
 
   const body = (
@@ -118,7 +127,15 @@ export function PublicJamCard({ jam, jamStatus, onExpire }: Props) {
                   <Countdown
                     target={clock}
                     onExpire={onExpire}
-                    render={r => <>{phase === 'scheduled' ? `opens in ${r}` : `closes in ${r}`}</>}
+                    // A full jam isn't closing — it's already shut. What's left
+                    // to wait for is the songs.
+                    render={r => (
+                      <>
+                        {phase === 'scheduled' ? `opens in ${r}`
+                          : filled ? `songs in ${r}`
+                          : `closes in ${r}`}
+                      </>
+                    )}
                   />
                 </span>
               )}
@@ -137,5 +154,25 @@ export function PublicJamCard({ jam, jamStatus, onExpire }: Props) {
     <Link to={`/jams/${jam._id}`} className="public-jam">{body}</Link>
   ) : (
     <div className="public-jam public-jam--inert">{body}</div>
+  );
+}
+
+// The card's shape, arriving before its contents. It keeps the red frame and the
+// pulse on purpose — announcing itself as *the* card is what stops the real one
+// landing as a surprise, where a grey box would just be a second one. Mirrors the
+// real layout so nothing below moves when the jam arrives.
+export function PublicJamCardSkeleton() {
+  return (
+    <div className="public-jam public-jam--inert" aria-hidden="true">
+      <div className="public-jam__skeleton-cover" />
+      <div className="public-jam__body">
+        <div className="public-jam__gauge" />
+        <div className="public-jam__meta">
+          <span className="public-jam__skeleton-bar" style={{ width: '40%' }} />
+          <span className="public-jam__skeleton-bar" style={{ width: '25%' }} />
+        </div>
+        <span className="public-jam__skeleton-bar" style={{ width: '65%' }} />
+      </div>
+    </div>
   );
 }

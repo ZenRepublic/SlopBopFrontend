@@ -1,4 +1,4 @@
-import { Countdown } from '../primitives/Countdown';
+import { Countdown } from '../../primitives/Countdown';
 
 interface Props {
   /** ISO timestamp submissions shut at. */
@@ -8,14 +8,10 @@ interface Props {
   onExpire: () => void;
 }
 
-/**
- * The "closing in" countdown pinned above a submission form: how long is left to
- * get one in. A pulsing red so a room can't miss it (styles/deadline-strip.css).
- *
- * Shared by both crowdsourced types. It used to be a mixtape's alone, because a
- * jam had no window at all — a jam is now a 6-day event, so the two close the
- * same way and say so with the same strip.
- */
+// The "closing in" countdown pinned above the submission form: how long is left
+// to get one in, in a pulsing red so a room can't miss it
+// (styles/deadline-strip.css). Rendered by `OpenCall` alone, which is why it
+// lives here — a jam and a mixtape shut the same way.
 export default function DeadlineStrip({ deadline, onExpire }: Props) {
   return (
     <div className="deadline-strip">

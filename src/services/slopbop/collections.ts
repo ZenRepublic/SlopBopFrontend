@@ -1,7 +1,7 @@
 import { apiFetch } from './client';
 import { Song } from './songs';
 import type { RequestClosedReason } from './requests';
-import type { JamStatus } from './jams';
+import type { OpenCallStatus } from './opencall';
 
 // How a collection resolves its songs and which extra fields it carries. All
 // three resolve their songs by collection_id back-reference and carry the same
@@ -15,14 +15,15 @@ import type { JamStatus } from './jams';
 //            branches on the type for that. The permanent catalogue (see
 //            Discography); `albums.ts` has the three writes only the owner can
 //            make.
-//   mixtape  crowdsourced against a submission window and released as a batch —
-//            what a Mixtape Commission produces.
-//   jam      crowdsourced, each song published as it's produced. A timed event
-//            the label runs: a submission window (capped by capacity too), then
-//            the most-bopped song is promoted to a single and the rest are
-//            deleted. See `JamStatus` for the phases. The jam doc itself
-//            survives its own resolution, since numbering the next one counts
-//            the ones that came before.
+//   mixtape  crowdsourced against a submission window — what a Mixtape
+//            Commission produces.
+//   jam      crowdsourced too, capped by capacity as well as by the clock, and
+//            at the end the most-bopped song is promoted to a Single and the
+//            rest are deleted. The jam doc survives its own resolution, since
+//            numbering the next one counts the ones that came before.
+//
+// The crowdsourced two run the *same* lifecycle — an open call, a window then a
+// staggered release. `OpenCallStatus` (`./opencall`) is it, and both carry one.
 //
 // The union is also the seam for future kinds (e.g. a `playlist` that resolves
 // an explicit song_id list instead).
@@ -79,9 +80,9 @@ export interface Collection {
   submission_count?: number;
   max_tracks?: number;
   // The jam's winner, once it has one — the field whose presence *is* the
-  // `resolved` phase. Jam-only, and the one piece of `JamStatus` the list read
-  // carries, which is how a list can tell a running jam from a finished one
-  // without a detail fetch per jam (see `useLiveJam`).
+  // `resolved` phase. Jam-only, and the one piece of `OpenCallStatus` the list
+  // read carries, which is how a list can tell a running jam from a finished one
+  // without a detail fetch per jam.
   selected_song_id?: string;
   // Which jam this is: 1 for the first the label ever ran, counting up. Jam-only,
   // stored on the doc and returned by every jam read — the detail fetch, the list,
@@ -135,17 +136,19 @@ interface CollectionsResponse {
 interface CollectionResponse {
   success: boolean;
   collection: Collection;
-  // A resolved jam returns `[]`: the winner was lifted out of the collection and
-  // the also-rans deleted, so there is nothing left to list. Fetch the winner by
-  // `jam_status.selected_song_id`.
+  // Empty more often than it looks, and never as a failure: an open call has no
+  // songs until its window shuts, and a resolved jam is empty again — its winner
+  // was lifted out (fetch it by `open_call_status.selected_song_id`) and the
+  // also-rans deleted.
   songs: Song[];
   // Returned for all three types. An album's answers for its owner alone — see
   // the note on `CollectionType` — so it gates the owner's "add a track" control
   // rather than a public form.
   request_status?: RequestStatus;
-  // Jam-only. Stacks on top of `request_status` rather than replacing it — the
-  // two answer different questions, and only `request_status` gates the form.
-  jam_status?: JamStatus;
+  // Both crowdsourced types (was `jam_status`, and jam-only). Stacks on top of
+  // `request_status` rather than replacing it — the two answer different
+  // questions, and only `request_status` gates the form.
+  open_call_status?: OpenCallStatus;
 }
 
 // List an artist's collections, optionally filtered by kind (e.g. `'jam'`).
@@ -160,5 +163,5 @@ export const fetchCollection = (id: string) =>
     collection: r.collection,
     songs: r.songs,
     requestStatus: r.request_status ?? null,
-    jamStatus: r.jam_status ?? null,
+    openCallStatus: r.open_call_status ?? null,
   }));
