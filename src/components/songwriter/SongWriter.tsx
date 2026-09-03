@@ -12,18 +12,13 @@ import {
   pageToText,
   pasteAt,
   splitLine,
-  writableMax,
   type PageEdit,
   type Spot,
 } from './lyricLines';
 
-// Field length caps, mirroring the backend's validation rules. TEXT_MAX counts
-// the line breaks too, since they're part of what's submitted — so the writer's
-// budget is what's left once a full page's breaks are paid for. Derived, not
-// typed in: change either cap and this follows.
+// Mirrors the backend's validation rule. The lyric cap isn't here — it's per
+// artist, derived server-side, and read off `status.character_limit`.
 const AUTHOR_MAX = 18;
-const TEXT_MAX = 260;
-const WRITABLE_MAX = writableMax(TEXT_MAX);
 
 // Device-level one-per-person dedup, for the collections that ask for it (see
 // `oncePerDevice`). The submission endpoint has no auth, so the server can't
@@ -98,7 +93,11 @@ export default function SongWriter({
   oncePerDevice = false,
   refresh,
 }: Props) {
-  const { track_count: trackCount, max_tracks: maxTracks } = status;
+  const {
+    track_count: trackCount,
+    max_tracks: maxTracks,
+    character_limit: charMax,
+  } = status;
   const [submitted, setSubmitted] = useState(
     () => oncePerDevice && !!getSubmittedCollections()[collectionId],
   );
@@ -141,15 +140,15 @@ export default function SongWriter({
 
   /**
    * Take a whole-page change if it fits the writing budget. Measured on the
-   * written characters alone — the breaks are already paid for (see
-   * `writableMax`), so the budget doesn't shift underfoot as lines are used.
-   * The per-line cap is the input's own `maxLength`; this is the only other
-   * limit, and refusing is the right answer for it — nothing already written
-   * should be dropped to make room.
+   * written characters alone, which is what the backend counts too — so the
+   * budget doesn't shift underfoot as lines are used. The per-line cap is the
+   * input's own `maxLength`; this is the only other limit, and refusing is the
+   * right answer for it — nothing already written should be dropped to make
+   * room.
    */
   function commit(next: PageEdit | null): boolean {
     if (!next) return false;
-    if (contentLength(next.page) > WRITABLE_MAX) return false;
+    if (contentLength(next.page) > charMax) return false;
     spotRef.current = next.spot;
     setPage(next.page);
     return true;
@@ -158,7 +157,7 @@ export default function SongWriter({
   function setLine(line: number, value: string) {
     const next = [...page];
     next[line] = value;
-    if (contentLength(next) > WRITABLE_MAX) return;
+    if (contentLength(next) > charMax) return;
     setPage(next);
   }
 
@@ -202,10 +201,13 @@ export default function SongWriter({
     }
   }
 
-  const remaining = WRITABLE_MAX - contentLength(page);
+  const written = contentLength(page);
+  const remaining = charMax - written;
 
   const authorValid = !signature || (author.trim().length > 0 && author.length <= AUTHOR_MAX);
-  const textValid = text.trim().length > 0 && text.length <= TEXT_MAX;
+  // Counted the way the backend counts it — content, breaks excluded — so a page
+  // the server would accept can't fail here.
+  const textValid = written > 0 && written <= charMax;
   const allValid = authorValid && textValid;
 
   async function handleSend() {

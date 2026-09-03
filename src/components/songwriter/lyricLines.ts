@@ -35,28 +35,15 @@ export function blankPage(): string[] {
   return Array.from({ length: MAX_LINES }, () => '');
 }
 
-/** Characters actually written, breaks excluded. What the budget is spent on. */
+/**
+ * Characters actually written, breaks excluded. The whole budget: the backend
+ * counts content the same way, so this compares straight to its limit and one
+ * character typed is one character spent, start to finish.
+ */
 export function contentLength(page: string[]): number {
   let n = 0;
   for (const line of page) n += line.length;
   return n;
-}
-
-/**
- * How much of a backend character budget the writer actually gets to spend.
- *
- * The submitted text carries a break between every pair of written lines, and
- * those breaks count against the backend's cap like any other character. Left
- * alone, that makes the budget move: the breaks above only get charged once you
- * write below them, so starting a new line quietly costs several characters and
- * the counter drops without you typing anything.
- *
- * So the breaks are paid for up front — the most a full page can ever need is
- * one per gap between lines — and what's left is a budget where one character
- * typed is one character spent, start to finish.
- */
-export function writableMax(textMax: number): number {
-  return textMax - (MAX_LINES - 1);
 }
 
 /**

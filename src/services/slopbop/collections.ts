@@ -124,6 +124,10 @@ export interface RequestStatus {
   // Null when the collection was never given a capacity — the `not_configured`
   // case, where `open` is false and there is no gauge to render.
   max_tracks: number | null;
+  // How many characters of lyrics a submission may carry. Per artist, derived
+  // server-side, and counted on content alone — line breaks don't spend it — so
+  // the writer compares its written characters straight to this.
+  character_limit: number;
   submission_start: string | null;
   submission_deadline: string | null;
 }
